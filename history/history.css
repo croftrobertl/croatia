@@ -1,0 +1,312 @@
+/* Balkans History — interactive map tab.
+   Layout: map plate on the left (full width on phones), reading column on the right.
+   Tokens fall back to the Croatia site's "Classical" system (--dcc-tour-*) so the tab
+   inherits the host theme when embedded and still stands alone. */
+.bh-root {
+  --bh-bg: var(--dcc-tour-bg, #f3f2f2);
+  --bh-surface: var(--dcc-tour-surface, #eae9e9);
+  --bh-card: var(--dcc-tour-card-bg, #f8f4f4);
+  --bh-text: var(--dcc-tour-text, #201f1d);
+  --bh-muted: var(--dcc-tour-muted, #736f6a);
+  --bh-border: var(--dcc-tour-border, #d7d3d3);
+  --bh-accent: var(--dcc-tour-primary, #b68235);
+  --bh-accent-deep: var(--dcc-tour-accent-deep, #7d5411);
+  --bh-tint: color-mix(in srgb, var(--bh-accent) 13%, transparent);
+  --bh-radius: var(--dcc-tour-radius, 6px);
+  --bh-sea: #d6e0e2;
+  --bh-land: #e2dccf;
+  --bh-ink: #3c3730;
+  --bh-gold: #d9a22b;
+  --bh-font: var(--dcc-tour-font, "Lora", Georgia, "Times New Roman", serif);
+  --bh-head: var(--dcc-tour-font-head, "Cinzel", Georgia, "Times New Roman", serif);
+  --bh-display: "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
+  color: var(--bh-text);
+  background: var(--bh-bg);
+  font-family: var(--bh-font);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+}
+.bh-root *, .bh-root *::before, .bh-root *::after { box-sizing: border-box; }
+
+.bh-layout { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 960px) {
+  .bh-layout { grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); align-items: start; gap: 28px; }
+  .bh-side { position: sticky; top: 12px; }
+}
+
+/* ---------- era heading: a badge on the map ---------- */
+.bh-head { position: absolute; left: 16px; top: 16px; z-index: 2; display: grid; gap: 1px; min-width: 0; max-width: min(64%, 360px);
+  padding: 7px 12px 8px; border-radius: var(--bh-radius); background: color-mix(in srgb, var(--bh-card) 90%, transparent);
+  border: 1px solid var(--bh-border); box-shadow: 0 2px 10px rgba(0,0,0,.12); pointer-events: none; }
+.bh-kicker { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; }
+.bh-yearline { display: grid; gap: 1px; }
+.bh-year { font-family: var(--bh-display); font-weight: 600; font-size: clamp(26px, 6vw, 40px); line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums; letter-spacing: -.01em; }
+.bh-title { font-family: var(--bh-head); font-weight: 600; font-size: clamp(10.5px, 2.4vw, 13px); letter-spacing: .06em; line-height: 1.25;
+  text-transform: uppercase; color: var(--bh-accent-deep); text-wrap: balance; }
+.bh-caption { margin: 6px auto 0; max-width: 62ch; color: var(--bh-text); text-wrap: pretty; text-align: center; }
+
+/* ---------- map plate ---------- */
+.bh-plate { background: var(--bh-surface); border-radius: var(--bh-radius); padding: 8px; position: relative; }
+.bh-viewport.bh-zoomed { touch-action: none; }
+.bh-viewport { position: relative; overflow: hidden; border-radius: calc(var(--bh-radius) - 2px); background: var(--bh-sea);
+  aspect-ratio: 1820 / 1831; max-width: 100%; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+.bh-viewport.bh-dragging { cursor: grabbing; }
+.bh-stage { position: absolute; inset: 0; }   /* never transformed: zoom redraws the SVG (see apply() in history.js) */
+.bh-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.bh-layer { transition: opacity .55s ease; }
+.bh-poly { stroke: var(--bh-ink); stroke-opacity: .55; stroke-width: 1.4; vector-effect: non-scaling-stroke; fill-opacity: .86;
+  cursor: pointer; transition: fill-opacity .2s; }
+.bh-poly:hover { fill-opacity: 1; }
+.bh-poly.bh-sel { stroke: var(--bh-text); stroke-opacity: 1; stroke-width: 2.6; fill-opacity: 1; }
+.bh-chg { fill: none; stroke: var(--bh-gold); stroke-width: 4; vector-effect: non-scaling-stroke; pointer-events: none;
+  opacity: 0; animation: bh-glow 2.2s ease-out .25s 1 both; }
+@keyframes bh-glow { 0% { opacity: 0 } 18% { opacity: 1 } 100% { opacity: 0 } }
+.bh-borders { fill: none; stroke: var(--bh-text); stroke-opacity: .5; stroke-width: 1.1; stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke; pointer-events: none; }
+.bh-trail { fill: none; stroke: var(--bh-text); stroke-opacity: .55; stroke-width: 1.6; stroke-dasharray: 1 5; stroke-linecap: round;
+  vector-effect: non-scaling-stroke; pointer-events: none; }
+.bh-former { fill: var(--bh-bg); stroke: var(--bh-text); stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.bh-ragusa-ring { fill: none; stroke: var(--bh-gold); stroke-width: 2.4; vector-effect: non-scaling-stroke; }
+.bh-inbox { fill: none; stroke: var(--bh-accent); stroke-width: 1.8; vector-effect: non-scaling-stroke; }
+.bh-hide-borders .bh-borders, .bh-hide-caps .bh-cap, .bh-hide-trails .bh-trail, .bh-hide-trails .bh-oldcap { display: none; }
+
+/* labels live in HTML so they stay legible at phone size; positioned in % of the map */
+.bh-labels { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+.bh-lab { position: absolute; transform: translate(-50%, -50%) scale(var(--bh-inv, 1)); white-space: nowrap; text-align: center;
+  font-family: var(--bh-font); font-weight: 600; color: var(--bh-text); line-height: 1.05;
+  text-shadow: 0 0 3px var(--bh-card), 0 0 3px var(--bh-card), 0 0 6px var(--bh-card); transition: opacity .3s; }
+.bh-lab.bh-tribal { font-style: italic; font-weight: 400; color: #4d473e; }
+.bh-lab.bh-off, .bh-oldcap.bh-off { opacity: 0; }
+.bh-cap { position: absolute; transform: translate(-6px, -50%) scale(var(--bh-inv, 1)); transform-origin: 6px 50%;
+  display: flex; align-items: center; gap: 3px; font-size: 11.5px; font-weight: 600; white-space: nowrap; color: #fff;
+  text-shadow: 0 0 2px #000, 0 0 3px #000, 0 1px 3px #000; }
+.bh-cap::before { content: "★"; font-size: 13px; color: #fff; }
+.bh-cap.bh-edge::before { content: none; }
+.bh-oldcap { position: absolute; transform: translate(-50%, 4px) scale(var(--bh-inv, 1)); transform-origin: 50% 0; font-size: 10px; font-style: italic;
+  color: var(--bh-ink); text-shadow: 0 0 3px var(--bh-card), 0 0 3px var(--bh-card); white-space: nowrap; }
+.bh-oldcap::before { content: ""; position: absolute; left: 50%; top: -8px; width: 7px; height: 7px; margin-left: -3.5px;
+  border: 1.5px solid var(--bh-ink); border-radius: 50%; background: var(--bh-card); }
+.bh-raglab { position: absolute; transform: translate(-50%, 0) scale(var(--bh-inv, 1)); transform-origin: 50% 0; margin-top: 12px;
+  font-family: var(--bh-head); font-weight: 600; font-size: 12px; letter-spacing: .08em; color: var(--bh-accent-deep);
+  text-shadow: 0 0 3px var(--bh-card), 0 0 3px var(--bh-card), 0 0 6px var(--bh-card); white-space: nowrap; }
+
+.bh-zoom { position: absolute; left: 14px; bottom: 14px; display: grid; gap: 4px; z-index: 2; }
+/* today's map underneath, once zoomed in (OpenStreetMap tiles; the era shapes turn translucent over them) */
+.bh-tiles { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity .45s; background: #f2efe9; }   /* z-index 0: the tiles' own stacking stays under the map */
+.bh-tile { position: absolute; max-width: none; opacity: 0; transition: opacity .25s; user-select: none; -webkit-user-select: none; }
+.bh-tile.bh-in { opacity: 1; }
+.bh-seafill, .bh-landfill { transition: opacity .45s; }
+.bh-tiles-on .bh-tiles { opacity: 1; }
+.bh-tiles-on .bh-seafill, .bh-tiles-on .bh-landfill { opacity: 0; }
+.bh-tiles-on .bh-stage svg { mix-blend-mode: multiply; }
+.bh-tiles-on .bh-poly { fill-opacity: .42; }
+.bh-tiles-on .bh-poly:hover, .bh-tiles-on .bh-poly.bh-sel { fill-opacity: .62; }
+.bh-attrib { position: absolute; right: 12px; bottom: 12px; z-index: 2; display: none; font-size: 10.5px; line-height: 1.4; padding: 1px 6px;
+  border-radius: 3px; background: rgba(255, 255, 255, .85); color: #333; }
+.bh-attrib a { color: inherit; }
+.bh-tiles-on .bh-attrib { display: block; }
+.bh-deep .bh-borders, .bh-deep .bh-trail { stroke-dasharray: none; stroke-opacity: .4; }
+.bh-ragterr { display: none; pointer-events: none; }
+.bh-tiles-on .bh-ragterr { display: inline; }
+.bh-rt { vector-effect: non-scaling-stroke; stroke-width: 2; stroke-linejoin: round; }
+.bh-rt-rag { fill: #f2c230; fill-opacity: .55; stroke: #7d5411; pointer-events: visiblePainted; cursor: pointer; }
+.bh-rt-rag:hover, .bh-rt-rag.bh-sel { fill-opacity: .72; stroke: var(--bh-text); stroke-width: 2.6; }
+.bh-ragdot, .bh-ragusa-ring { cursor: pointer; }
+.bh-rt-former { fill: #f2c230; fill-opacity: .22; stroke: #b68235; }
+.bh-rt-ceded { fill: #b68235; fill-opacity: .18; stroke: #7d5411; }
+.bh-rt-siege { fill: #c0392b; fill-opacity: .28; stroke: #c0392b; }
+.bh-zoom button { width: 34px; height: 34px; }
+
+/* ---------- controls ---------- */
+.bh-btn { font: inherit; font-size: 14px; color: var(--bh-text); background: var(--bh-card); border: 1px solid var(--bh-border);
+  border-radius: var(--bh-radius); min-height: 34px; padding: 4px 10px; cursor: pointer; display: inline-flex; align-items: center;
+  justify-content: center; gap: 6px; }
+.bh-btn:hover { border-color: var(--bh-accent); }
+.bh-btn:focus-visible, .bh-toggle input:focus-visible + span {
+  outline: 2px solid var(--bh-accent); outline-offset: 2px; }
+.bh-btn[aria-pressed="true"] { border-color: var(--bh-accent); background: var(--bh-tint); color: var(--bh-accent-deep); }
+
+.bh-timeline { display: grid; gap: 6px; margin-top: 12px; }
+.bh-track { position: relative; height: 54px; }
+.bh-era { position: absolute; top: 14px; height: 5px; border-radius: 3px; opacity: .85; }
+.bh-era-name { position: absolute; top: 0; transform: translateX(-50%); font-family: var(--bh-head); font-size: 9.5px;
+  letter-spacing: .14em; color: var(--bh-muted); white-space: nowrap; }
+.bh-axis { position: absolute; left: 0; right: 0; top: 31px; height: 2px; background: var(--bh-border); }
+.bh-progress { position: absolute; left: 0; top: 31px; height: 2px; background: var(--bh-accent); transition: width .5s ease; }
+.bh-dot { position: absolute; top: 32px; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; padding: 0;
+  border: 1.5px solid var(--bh-muted); background: var(--bh-bg); cursor: pointer; }
+.bh-dot::after { content: ""; position: absolute; inset: -9px -3px; }   /* bigger tap target without bigger dots */
+.bh-dot.bh-past { background: var(--bh-accent); border-color: var(--bh-accent); }
+.bh-dot.bh-cur { width: 17px; height: 17px; margin: -8.5px 0 0 -8.5px; background: var(--bh-accent); border: 3px solid var(--bh-bg);
+  box-shadow: 0 0 0 1.5px var(--bh-accent); z-index: 1; }
+.bh-ticks { position: absolute; left: 0; right: 0; top: 40px; font-size: 10.5px; color: var(--bh-muted); font-variant-numeric: tabular-nums; }
+.bh-ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.bh-ticks span:first-child { transform: none; }
+.bh-ticks span:last-child { transform: translateX(-100%); }
+.bh-gap { justify-self: start; margin-top: 3px; font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--bh-accent-deep);
+  background: var(--bh-tint); border-radius: 999px; padding: 0 8px; line-height: 18px; height: 0; opacity: 0; overflow: hidden; transition: opacity .25s, height .25s; }
+.bh-gap.bh-show { opacity: 1; height: 18px; }
+.bh-transport { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.bh-toggles { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--bh-muted); margin-top: 4px; }
+.bh-toggle { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.bh-toggle input { accent-color: var(--bh-accent); width: 15px; height: 15px; margin: 0; }
+
+/* ---------- side column ---------- */
+.bh-side { display: grid; gap: 18px; min-width: 0; }
+.bh-info-name { font-family: var(--bh-display); font-weight: 600; font-size: 24px; line-height: 1.15; display: flex; align-items: center; gap: 9px; }
+.bh-swatch { width: 14px; height: 14px; border-radius: 3px; flex: none; border: 1px solid rgba(0,0,0,.25); }
+.bh-info-note { color: var(--bh-muted); font-size: 13.5px; }
+
+.bh-ragusa { background: var(--bh-card); border: 1px solid var(--bh-border); border-radius: var(--bh-radius); padding: 14px; display: grid; gap: 10px; }
+.bh-ragusa-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.bh-ragusa-name { font-family: var(--bh-head); font-weight: 600; letter-spacing: .1em; font-size: 14px; color: var(--bh-accent-deep); }
+.bh-ragusa-status { font-family: var(--bh-display); font-weight: 600; font-size: 21px; line-height: 1.1; }
+.bh-libertas { font-family: var(--bh-head); font-size: 11.5px; letter-spacing: .12em; color: var(--bh-accent-deep); font-variant-numeric: tabular-nums; }
+.bh-ragusa svg { width: 100%; height: auto; display: block; border-radius: 4px; background: var(--bh-sea); }
+.bh-ragusa-body { margin: 0; text-wrap: pretty; }
+.bh-ragusa svg path, .bh-ragusa svg circle, .bh-ragusa svg line { vector-effect: non-scaling-stroke; }
+.bh-ilabel { font: 600 64px var(--bh-font); fill: var(--bh-ink); paint-order: stroke; stroke: var(--bh-card); stroke-width: 16px; stroke-linejoin: round; }
+.bh-ilabel.bh-big { font: 600 76px var(--bh-head); letter-spacing: .08em; fill: var(--bh-accent-deep); }
+.bh-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--bh-muted); }
+.bh-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.bh-key { width: 16px; height: 11px; border-radius: 2px; display: inline-block; border: 1px solid rgba(0,0,0,.2); }
+.bh-sources { font-size: 12px; color: var(--bh-muted); border-top: 1px solid var(--bh-border); padding-top: 10px; }
+.bh-sources a { color: var(--bh-accent-deep); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bh-layer, .bh-progress, .bh-lab, .bh-gap { transition: none; }
+  .bh-chg { animation: none; opacity: .9; }
+}
+
+.bh-cap.bh-capl { flex-direction: row-reverse; transform: translate(calc(-100% + 6px), -50%) scale(var(--bh-inv, 1)); transform-origin: calc(100% - 6px) 50%; }
+@media (max-width: 600px) {
+  .bh-cap { font-size: 10.5px; }
+  .bh-cap::before { font-size: 11px; }
+  .bh-zoom button { width: 38px; height: 38px; min-height: 38px; padding: 0; }
+}
+
+/* satellite view: imagery under the old borders (no multiply blend, which would turn it to mud) */
+.bh-sat .bh-tiles { background: #2b3326; }
+.bh-sat.bh-tiles-on .bh-stage svg { mix-blend-mode: normal; }
+.bh-sat.bh-tiles-on .bh-poly { fill-opacity: .3; }
+.bh-sat.bh-tiles-on .bh-poly:hover, .bh-sat.bh-tiles-on .bh-poly.bh-sel { fill-opacity: .5; }
+.bh-tile > img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; }
+/* play/pause: round and filled, like every play button on the site */
+.bh-btn.bh-playbtn { width: 34px; min-width: 34px; height: 34px; min-height: 34px; padding: 0; border-radius: 999px;
+  background: var(--bh-accent); border-color: var(--bh-accent); color: #fff; }
+.bh-btn.bh-playbtn:hover { background: var(--bh-accent-deep, #7d5411); border-color: var(--bh-accent-deep, #7d5411); }
+.bh-btn.bh-playbtn[aria-pressed="true"] { background: var(--bh-accent); color: #fff; box-shadow: 0 0 0 3px var(--bh-tint); }
+.bh-playbtn svg { display: block; }
+
+/* ---------- the ribbon is the slider ---------- */
+.bh-track { cursor: pointer; touch-action: pan-y; user-select: none; -webkit-user-select: none; border-radius: 6px; }
+.bh-track:focus-visible { outline: 2px solid var(--bh-accent); outline-offset: 4px; }
+.bh-dot { pointer-events: none; transition: left .2s; }
+.bh-dot.bh-cur { width: 22px; height: 22px; margin: -11px 0 0 -11px; box-shadow: 0 1px 4px rgba(0,0,0,.3), 0 0 0 4px var(--bh-tint); z-index: 1; }
+.bh-era-name { padding: 2px 4px; margin-top: -2px; border-radius: 4px; cursor: pointer; }
+.bh-era-name:hover { background: var(--bh-tint); color: var(--bh-accent-deep); }
+.bh-bubble { position: absolute; top: 32px; transform: translate(-50%, calc(-100% - 16px)); pointer-events: none; opacity: 0; z-index: 2;
+  font-family: var(--bh-display); font-weight: 600; font-size: 17px; line-height: 1; white-space: nowrap; color: #fff;
+  background: var(--bh-accent-deep); border-radius: 6px; padding: 5px 9px; box-shadow: 0 2px 8px rgba(0,0,0,.25); transition: opacity .12s; }
+.bh-bubble::after { content: ""; position: absolute; left: calc(50% + var(--ax, 0px)); bottom: -5px; margin-left: -5px; border: 5px solid transparent; border-bottom: 0; border-top-color: var(--bh-accent-deep); }
+.bh-bubble.bh-show { opacity: 1; }
+.bh-transport { justify-content: center; }
+
+/* ---------- on the map: the region you tapped, and Layers ---------- */
+.bh-pick { position: absolute; left: 14px; right: 14px; top: 14px; z-index: 3; display: grid; gap: 2px; padding: 10px 40px 10px 12px;
+  background: var(--bh-card); border: 1px solid var(--bh-border); border-radius: var(--bh-radius); box-shadow: 0 4px 16px rgba(0,0,0,.18); max-width: 360px; }
+.bh-pick[hidden], .bh-pop[hidden] { display: none; }
+.bh-pick .bh-info-name { font-size: 19px; }
+.bh-pick .bh-info-note { font-size: 13px; line-height: 1.4; }
+.bh-pick-x { position: absolute; right: 4px; top: 4px; width: 36px; height: 36px; border: 0; background: none; font-size: 22px; line-height: 1; color: var(--bh-muted); cursor: pointer; border-radius: 50%; }
+.bh-pick-x:hover { background: var(--bh-tint); color: var(--bh-text); }
+.bh-pick-x:focus-visible { outline: 2px solid var(--bh-accent); outline-offset: -2px; }
+.bh-layersbtn.bh-on { border-color: var(--bh-accent); background: var(--bh-tint); color: var(--bh-accent-deep); }
+.bh-pop { position: absolute; left: 62px; bottom: 14px; z-index: 4; width: min(300px, calc(100% - 76px)); max-height: calc(100% - 28px); overflow: auto;
+  display: grid; gap: 8px; padding: 12px 14px; background: var(--bh-card); border: 1px solid var(--bh-border); border-radius: var(--bh-radius);
+  box-shadow: 0 6px 22px rgba(0,0,0,.22); font-size: 13.5px; }
+.bh-pop-k { font-family: var(--bh-head); font-size: 10.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--bh-muted); margin-top: 2px; }
+.bh-seg { display: flex; gap: 6px; }
+.bh-seg button { flex: 1; font: inherit; font-size: 13px; min-height: 38px; padding: 4px 10px; cursor: pointer; border-radius: 999px;
+  color: var(--bh-text); background: var(--bh-card); border: 1px solid var(--bh-border); }
+.bh-seg button[aria-pressed="true"] { border-color: var(--bh-accent); background: var(--bh-tint); color: var(--bh-accent-deep); box-shadow: inset 0 0 0 1px var(--bh-accent); }
+.bh-seg button:focus-visible { outline: 2px solid var(--bh-accent); outline-offset: 2px; }
+.bh-pop .bh-toggles { display: grid; gap: 2px; margin: 0; font-size: 13.5px; color: var(--bh-text); }
+.bh-pop .bh-toggle { min-height: 36px; }
+.bh-pop .bh-toggle input { width: 18px; height: 18px; }
+.bh-pop .bh-legend { display: grid; gap: 4px; font-size: 12.5px; }
+.bh-pop .bh-sources { border-top: 1px solid var(--bh-border); padding-top: 8px; font-size: 11.5px; }
+@media (max-width: 600px) { .bh-pop { left: 60px; } }
+
+/* while a finger drags the ribbon, the map's labels wait (they'd belong to the era before) */
+.bh-quick .bh-labels, .bh-quick .bh-ragterr { opacity: 0; transition: none; }
+.bh-labels { transition: opacity .15s; }
+/* the ribbon's era stops are evenly spaced, so the dots needn't be tiny */
+.bh-ticks span { font-size: 10.5px; }
+@media (max-width: 600px) { .bh-t-narrow { display: none; } }
+/* a tapped region's lifetime, lit on the ribbon */
+.bh-life { position: absolute; left: 0; right: 0; top: 27px; height: 10px; pointer-events: none; }
+.bh-life i { position: absolute; top: 0; bottom: 0; border-radius: 5px; box-shadow: 0 0 0 1.5px var(--bh-text); opacity: .9; }
+.bh-pick.bh-at-bottom { top: auto; bottom: 14px; left: 62px; }
+/* first visit: the handle steps along and back once, to show that it moves */
+@keyframes bh-nudge { 0%, 100% { translate: 0 0; } 30%, 45% { translate: var(--nudge, 18px) 0; } 70% { translate: 0 0; } 82% { translate: calc(var(--nudge, 18px) * .4) 0; } }
+.bh-dot.bh-nudge { animation: bh-nudge 1.5s ease-in-out; }
+/* the map is never taller than the screen */
+.bh-plate { max-width: calc((100svh - 150px) * 1820 / 1831 + 16px); margin-inline: auto; width: 100%; }
+/* a phone on its side: the map on the left at screen height, the timeline beside it */
+@media (orientation: landscape) and (max-height: 540px) {
+  .bh-layout { grid-template-columns: minmax(0, 1fr); }
+  .bh-main { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: center; }
+  .bh-plate { width: calc((100svh - 84px) * 1820 / 1831 + 16px); max-width: 55vw; margin: 0; }
+  .bh-timeline { margin-top: 0; }
+  .bh-pop { max-height: calc(100% - 20px); bottom: 10px; }
+  .bh-head { left: 12px; top: 12px; }
+}
+
+/* the host's own places (the trip's photos, videos and clips), switched on in Layers; shown close in */
+.bh-pins { display: none; }
+.bh-pins-on.bh-close .bh-pins { display: inline; }
+.bh-quick .bh-pins { opacity: 0; }
+.bh-pin { cursor: pointer; }
+.bh-pin-hit { fill: transparent; pointer-events: all; }
+.bh-pin-dot { fill: #0f6dbf; stroke: #fff; stroke-width: 1.8; vector-effect: non-scaling-stroke; pointer-events: none; }
+.bh-pin:hover .bh-pin-dot, .bh-pin.bh-sel .bh-pin-dot { fill: #0a4d8a; stroke: var(--bh-text); stroke-width: 2.4; }
+.bh-pin-key { display: inline-block; width: 11px; height: 11px; border-radius: 50%; background: #0f6dbf; border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.3); vertical-align: -1px; margin-right: 6px; box-sizing: border-box; }
+.bh-pin-swatch { background: #0f6dbf; border-radius: 50%; }
+.bh-info-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.bh-info-act { font: inherit; font-size: 13px; font-weight: 600; min-height: 44px; padding: 4px 14px; cursor: pointer; border-radius: 999px;
+  border: 1px solid var(--bh-accent); background: var(--bh-tint); color: var(--bh-accent-deep); }
+.bh-info-act:hover { box-shadow: inset 0 0 0 1px var(--bh-accent); }
+.bh-info-act:focus-visible { outline: 2px solid var(--bh-accent); outline-offset: 2px; }
+
+/* ---------- phones: the year ruler (replaces the ribbon of dots) ---------- */
+.bh-ruler { display: none; }
+@media (max-width: 800px) {
+  .bh-ruler { display: block; min-width: 0; margin: 4px -4px 0; }
+  .bh-ruler-win, .bh-ruler-strip { min-width: 0; max-width: 100%; }
+  .bh-root .bh-track, .bh-root .bh-transport, .bh-head .bh-year { display: none; }
+  .bh-ruler-year { text-align: center; font-family: var(--bh-display); font-weight: 600; font-size: 44px; line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums; color: var(--bh-text); }
+  .bh-ruler-year.bh-rag { color: var(--bh-accent); }
+  .bh-ruler-win { position: relative; margin-top: 6px; }
+  .bh-ruler-win::before, .bh-ruler-win::after { content: ""; position: absolute; top: 0; bottom: 0; width: 56px; z-index: 1; pointer-events: none; }
+  .bh-ruler-win::before { left: 0; background: linear-gradient(90deg, var(--bh-bg), transparent); }
+  .bh-ruler-win::after { right: 0; background: linear-gradient(270deg, var(--bh-bg), transparent); }
+  .bh-ruler-strip { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain;
+    padding: 0 calc(50% - 32px); }
+  .bh-ruler-strip::-webkit-scrollbar { display: none; }
+  .bh-rmark { flex: 0 0 64px; scroll-snap-align: center; display: grid; justify-items: center; align-content: start; gap: 5px;
+    height: 54px; padding: 0; border: 0; background: none; cursor: pointer; color: var(--bh-muted); font: inherit; }
+  .bh-rmark i { display: block; width: 2px; height: 14px; background: var(--bh-border); border-radius: 1px; }
+  .bh-rmark span { font-size: 12px; font-variant-numeric: lining-nums tabular-nums; white-space: nowrap; }
+  .bh-rmark.bh-rag i { background: var(--bh-gold); height: 18px; width: 3px; }
+  .bh-rmark.bh-rag span { color: var(--bh-accent-deep); font-weight: 700; }
+  .bh-rmark.bh-on span { color: var(--bh-text); font-weight: 700; }
+  .bh-ruler-needle { position: absolute; left: 50%; top: -4px; width: 2px; height: 26px; margin-left: -1px; z-index: 2;
+    background: var(--bh-text); border-radius: 1px; pointer-events: none; }
+  .bh-ruler-needle::before { content: ""; position: absolute; left: -4px; top: -4px; border: 5px solid transparent; border-top-color: var(--bh-text); }
+  .bh-ruler-hint { margin: 2px 0 0; text-align: center; font-size: 12px; color: var(--bh-muted); }
+}
