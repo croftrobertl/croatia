@@ -3,7 +3,7 @@
 // views them. Bump CACHE_VERSION whenever bundle.js/css or the vendor list change in
 // a way that needs an immediate refresh.
 
-const CACHE_VERSION = 'dcc-tour-v121';
+const CACHE_VERSION = 'dcc-tour-v123';
 const SHELL = [
   './',
   'index.html',
@@ -15,6 +15,7 @@ const SHELL = [
   'track.json',          // the GPS track: the "Then" overlay's border crossings work offline
   'icons/favicon-32.png',
   'icons/favicon-96.png',
+  'icons/crest-96.png',      // the Stats ticket's crest
   'vendor/leaflet.js',
   'vendor/leaflet.css',
   'vendor/leaflet-heat.js',

@@ -4202,7 +4202,7 @@
       '<div class="tk-foot"><div class="tk-best">' +
         (busiest && busiest.count > 0 ? '<span>' + dIcon('belltower') + ' Busiest day <b>' + escapeHtml(bLab) + '</b> · ' + busiest.count + '</span>' : '') +
         (captured ? '<span>' + dIcon('pin') + ' Most captured <b>' + escapeHtml(shortName(captured.name)) + '</b> · ' + captured.count + '</span>' : '') +
-      '</div><img class="tk-crest" src="' + escapeAttr(resolveUrl('icons/favicon-96.png')) + '" alt=""></div>' +
+      '</div><img class="tk-crest" src="' + escapeAttr(resolveUrl('icons/crest-96.png')) + '" alt=""></div>' +
     '</div>';
     return ticket + '<div class="dcc-tour-tripstats">' +
       statTile(h.steps, '', 'steps', '', 0,
