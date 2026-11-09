@@ -1977,7 +1977,7 @@
   function renderHistPlace() {
     if (!histEl) return;
     let sec = histEl.querySelector('.dcc-hist-place');
-    if (!histPlace || !histHandle || !DATA) { if (sec) sec.remove(); return; }
+    if (!histPlace || !histHandle || !DATA) { if (sec) { if (sec._youMap) sec._youMap.remove(); sec.remove(); } return; }
     if (!histHandle.frames || !histHandle.frames.length) return;   // the map's eras are still loading (onChange calls back)
     const name = histPlace, g = placeGeo(name);
     if (!sec) {
@@ -1990,6 +1990,7 @@
     sec.dataset.pl = name;
     const closeBtn = '<button type="button" class="dcc-hp-x" aria-label="Close this place" title="Close">×</button>';
     if (!g) { sec.innerHTML = closeBtn + '<p class="dcc-hist-msg">That place isn’t in the trip.</p>'; return; }
+    if (sec._youMap) { sec._youMap.remove(); sec._youMap = null; }
     sec.innerHTML = '<p class="dcc-hist-msg">Finding ' + escapeHtml(shortName(name)) + ' on the old maps…</p>';
     streetLoad().then(() => {
       if (sec.dataset.pl !== name) return;
@@ -2038,6 +2039,7 @@
         // where the siege touched this spot: one note, and the way into its story
         (siegeSpot ? '<aside class="dcc-hist-note dcc-hp-siege"><div class="dcc-hist-note-k"><span>In 1991–92</span></div><p>' + escapeHtml(siegeSpot.s) + '</p>' +
           '<button type="button" class="dcc-hist-note-a" data-siege="' + escapeAttr(siegeSpot.ev) + '">The siege in detail ›</button></aside>' : '') +
+        youHereHtml(name, self, siegeSpot) +
         '<h3 class="dcc-hp-k">Who held it</h3>' +
         '<div class="dcc-hp-ribbon" role="group" aria-label="Who held it, era by era">' + runs.map((r, i) =>
           '<button type="button" class="dcc-hp-rb ' + (r.cls || 'other') + '" data-run="' + i + '" style="flex-grow:' + r.n + '" title="' + escapeAttr(r.from.label + (r.to !== r.from ? ' – ' + r.to.label : '') + ': ' + r.t) + '" aria-label="' + escapeAttr(r.from.label + (r.to !== r.from ? ' to ' + r.to.label : '') + ': ' + r.t) + '"></button>').join('') + '</div>' +
@@ -2051,7 +2053,76 @@
         '<div class="dcc-hp-acts"><button type="button" class="dcc-hist-street dcc-hp-street">See this spot over today’s streets ›</button>' +
           (placePhotos(name).length ? '<button type="button" class="dcc-hist-street dcc-hp-card">Make a postcard ›</button>' : '') + '</div>';
       sec._runs = runs; sec._note = noteText;
+      youHereMap(sec, name, self);
     }).catch(() => { sec.innerHTML = closeBtn + '<p class="dcc-hist-msg">The place history couldn’t load — try again when you’re online.</p>'; });
+  }
+  // ---- "You stood here": on a place page, exactly where around it your photos were taken ----
+  function youHerePhotos(name) {
+    const out = [];
+    DATA.days.forEach((d, di) => (d.places || []).forEach((p, pi) => {
+      if (p.name !== name) return;
+      (p.items || []).forEach(it => { if (it.lat != null && it.lng != null && (it.full || (it.src && it.kind !== 'video' && it.kind !== 'clip'))) out.push({ it, p, di, pi }); });
+    }));
+    return out;
+  }
+  // the landmark the page is about (when there is one), else the place's own point
+  function youHereRef(name, self) {
+    if (self && self.ll) return { lat: self.ll[0], lng: self.ll[1], name: shortName(self.t.split(',')[0]) };
+    const g = placeGeo(name); return g ? { lat: g.lat, lng: g.lng, name: '' } : null;
+  }
+  const _m = (a, b) => _hav([a.lat, a.lng], [b.lat, b.lng]) * 1000;
+  function shortLen(m) { return imp() ? fmt(Math.round(m * 3.28084 / 5) * 5) + ' ft' : fmt(Math.round(m / 5) * 5) + ' m'; }
+  function youHereHtml(name, self, siegeSpot) {
+    const ph = youHerePhotos(name), ref = youHereRef(name, self);
+    if (!ph.length || !ref) return '';
+    const n = ph.length, days = [], times = [];
+    ph.forEach(x => { if (days.indexOf(x.di) < 0) days.push(x.di); if (x.it.time) times.push(x.it.time); });
+    times.sort();
+    const when = days.length === 1 && times.length
+      ? ' on ' + dayRanges(days) + (times[0] === times[times.length - 1] ? ' at ' + times[0] : ' between ' + times[0] + ' and ' + times[times.length - 1])
+      : ' on ' + dayRanges(days);
+    const core = youHereCore(ph, ref), far = n - core.ph.length;
+    const span = (lo, hi) => Math.round(lo / 5) === Math.round(hi / 5) ? shortLen(hi) : shortLen(lo).replace(/ (ft|m)$/, '') + '–' + shortLen(hi);
+    const lead = n === 1 ? 'Your photo here was taken ' : (far ? 'Most of your ' : 'Your ') + n + ' photos here were taken ';
+    let where = ref.name ? lead + span(core.lo, core.hi) + ' from ' + ref.name
+      : n === 1 ? lead + 'at the gold dot' : lead + 'within ' + shortLen(Math.max(5, core.hi)) + ' of this spot';
+    // a sombre place (somewhere the siege struck) keeps the quieter heading the chronicle uses
+    return '<section class="dcc-hp-you" aria-label="Where your photos were taken">' +
+      '<h3 class="dcc-hp-k">' + (siegeSpot ? 'Your photos from here' : 'You stood here') + '</h3>' +
+      '<div class="dcc-hp-you-map" role="img" aria-label="' + escapeAttr('Satellite map: ' + n + ' gold dots where your photos were taken' + (ref.name ? ', and ' + ref.name : '')) + '"></div>' +
+      '<p>' + escapeHtml(where + when + (far ? '; ' + (far === 1 ? 'one was' : far + ' were') + ' farther away' : '') + '.') + '</p>' +
+      '<button type="button" class="dcc-hist-note-a dcc-hp-you-b">Show ' + (n === 1 ? 'this photo' : 'these ' + n + ' photos') + ' ›</button></section>';
+  }
+  // the photos taken around the spot itself: a stray shot far off (filed under the place, or a GPS jump)
+  // shouldn't stretch the distances or zoom the mini map out
+  function youHereCore(ph, ref) {
+    const ds = ph.map(x => _m(x.it, ref)), sorted = ds.slice().sort((a, b) => a - b);
+    const lim = Math.max(150, 4 * sorted[Math.floor((sorted.length - 1) / 2)]);
+    const keep = ph.filter((x, i) => ds[i] <= lim), kd = ds.filter(d => d <= lim);
+    return { ph: keep, lo: Math.min(...kd), hi: Math.max(...kd) };
+  }
+  function youHereMap(sec, name, self) {
+    if (sec._youMap) { sec._youMap.remove(); sec._youMap = null; }   // the last place's mini map
+    const box = sec.querySelector('.dcc-hp-you-map');
+    if (!box) return;
+    const ph = youHerePhotos(name), ref = youHereRef(name, self);
+    ensureLeaflet().then(() => {
+      if (!box.isConnected) return;
+      const m = L.map(box, { zoomControl: false, dragging: false, touchZoom: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, tap: false, attributionControl: true, zoomSnap: 0.25 });
+      m.attributionControl.setPrefix(false); sec._youMap = m;
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20, maxNativeZoom: 18, attribution: ESRI_CREDIT }).addTo(m);
+      const pts = youHereCore(ph, ref).ph.map(x => [x.it.lat, x.it.lng]);
+      if (ref.name) {
+        pts.push([ref.lat, ref.lng]);
+        L.marker([ref.lat, ref.lng], { interactive: false, keyboard: false, icon: L.divIcon({ className: 'dcc-hp-you-ref', iconSize: [14, 14], iconAnchor: [7, 7], html: '<i></i><span>' + escapeHtml(ref.name) + '</span>' }) }).addTo(m);
+      }
+      ph.forEach(x => L.circleMarker([x.it.lat, x.it.lng], { radius: 5, color: '#fff', weight: 1.5, fillColor: '#b68235', fillOpacity: 1, interactive: false }).addTo(m));
+      const b = L.latLngBounds(pts);
+      m.fitBounds(b.pad(0.25), { maxZoom: 19, animate: false });
+      // the landmark's name reads to the left of its marker when it would run off the right edge
+      const lab = box.querySelector('.dcc-hp-you-ref');
+      if (lab && ref.name) { const x = m.latLngToContainerPoint([ref.lat, ref.lng]).x, w = lab.querySelector('span').offsetWidth; if (x + 22 + w > box.clientWidth) lab.classList.add('left'); }
+    }).catch(() => { box.remove(); });
   }
   function thenEraFor(year) {
     const F = histHandle && histHandle.frames;
@@ -2089,6 +2160,12 @@
       return;
     }
     if (e.target.closest('.dcc-hp-card')) { placePostcard(histPlace); return; }
+    if (e.target.closest('.dcc-hp-you-b')) {
+      const ph = youHerePhotos(histPlace);
+      viewerItems = ph.map(x => { const m = viewerMeta(x.it, x.p.name); m.mapRef = { di: x.di, pi: x.pi, place: x.p.name, count: placeCount(x.p) }; return m; });
+      if (viewerItems.length) openViewer(0);
+      return;
+    }
     if (e.target.closest('.dcc-hp-x')) { histPlace = null; renderHistPlace(); updateHash(); return; }
     if (e.target.closest('.dcc-hp-street')) {
       const g = placeGeo(histPlace);
@@ -2510,7 +2587,8 @@
         '<button class="dcc-tour-mm-fs" id="mm-fs" type="button" title="Full screen" aria-label="Full screen">⛶</button>' +
         thenMarkup() +
         '<figure class="dcc-tour-mm-moment" id="mm-moment" hidden></figure>' +
-        '<aside class="dcc-tour-mm-side" id="dcc-mm-side" hidden></aside></div>';
+        '<aside class="dcc-tour-mm-side" id="dcc-mm-side" hidden></aside>' +
+        '<div class="mm-fan" id="mm-fan" role="region" aria-label="Photos taken at this spot" hidden></div></div>';
     return w;
   }
   let mmOsm = null, mmMap = null, mmMarkers = null, mmPathLayer = null, mmHeat = null, mmSat = null, mmLabelLayer = null, mmInit = false;
@@ -2547,33 +2625,84 @@
   const MM_FAN_MAX = 12;   // clusters bigger than this open a thumbnail grid, not a ring
   function mmClusterBubble(group, centerLL) {
     const n = group.length, sz = n < 10 ? 34 : n < 50 ? 40 : n < 200 ? 48 : 56;
-    const icon = L.divIcon({ className: 'mm-cl', iconSize: [sz, sz], iconAnchor: [sz / 2, sz / 2],
+    const key0 = centerLL[0].toFixed(5) + ',' + centerLL[1].toFixed(5);
+    const icon = L.divIcon({ className: 'mm-cl' + (mmFan && mmFan.key === key0 ? ' mm-cl-fanned' : ''), iconSize: [sz, sz], iconAnchor: [sz / 2, sz / 2],
       html: '<span class="mm-cl-inner" style="background:' + mmDominantColor(group) + ';width:' + sz + 'px;height:' + sz + 'px">' + fmt(n) + '</span>' });
     const mk = L.marker(centerLL, { icon, keyboard: false });
-    const key = centerLL[0].toFixed(5) + ',' + centerLL[1].toFixed(5);
+    const key = key0;
     mk.on('click', (e) => {
       if (e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent);
       if (group.length > MM_FAN_MAX) { mmCloseFan(); mmOpenClusterGrid(group); return; }
       if (mmSpiderKey === key) mmCloseFan();          // tap the same bubble again -> close
-      else mmSpiderfy(group, centerLL, key);
+      else { mmOpenFan(group, key); const el = mk.getElement(); if (el) el.classList.add('mm-cl-fanned'); }
     });
     return mk;
   }
-  function mmCloseFan() { if (mmSpiderLayer) mmSpiderLayer.clearLayers(); mmSpiderKey = null; }
-  // fan a group's pins out in a ring around the centre, with connector legs
-  function mmSpiderfy(group, centerLL, key) {
-    if (!mmSpiderLayer) return;
-    mmSpiderLayer.clearLayers();
-    const showFacing = root._mapmode.querySelector('#mm-facing').checked;
-    const cpt = mmMap.latLngToContainerPoint(centerLL);
-    const n = group.length, rad = Math.min(150, 34 + n * 5.5);
-    group.forEach((rec, i) => {
-      const ang = (2 * Math.PI * i / n) - Math.PI / 2;
-      const ll = mmMap.containerPointToLatLng(L.point(cpt.x + rad * Math.cos(ang), cpt.y + rad * Math.sin(ang)));
-      mmSpiderLayer.addLayer(L.polyline([centerLL, ll], { color: '#666', weight: 1, opacity: 0.55, interactive: false }));
-      mmSpiderLayer.addLayer(mmItemMarker(rec, ll, showFacing));
-    });
+  function mmCloseFan() {
+    if (mmSpiderLayer) mmSpiderLayer.clearLayers(); mmSpiderKey = null; mmFan = null;
+    const f = root._mapmode && root._mapmode.querySelector('#mm-fan'); if (f) { f.hidden = true; f.innerHTML = ''; f.parentNode.classList.remove('mm-fan-open'); f.parentNode.querySelectorAll('.mm-cl-fanned').forEach(e => e.classList.remove('mm-cl-fanned')); }
+  }
+  // ---- a spot's photos fan out: each one's dot at its own GPS point with a cone for the way the camera faced,
+  //      and the photos themselves in a strip along the bottom of the map (tap one to open it) ----
+  let mmFan = null;
+  function mmOpenFan(group, key) {
+    const recs = group.slice().sort((a, b) => a.di - b.di || String(a.it.time || '').localeCompare(String(b.it.time || '')));
+    mmFan = { recs, key };
     mmSpiderKey = key || true;
+    const fan = root._mapmode.querySelector('#mm-fan');
+    const names = {}; recs.forEach(r => names[r.p.name] = (names[r.p.name] || 0) + 1);
+    const top = Object.keys(names).sort((a, b) => names[b] - names[a])[0];
+    const place = Object.keys(names).length === 1 ? shortName(top) : '';
+    const anyHeading = recs.some(r => r.heading != null);
+    viewerItems = [];
+    const thumbs = recs.map((r, i) => {
+      const it = r.it, meta = viewerMeta(it, r.p.name);
+      meta.mapRef = { di: r.di, pi: r.pi, place: r.p.name, count: placeCount(r.p) };
+      viewerItems.push(meta);
+      // the same thumbnails as the Map's photo grid: a photo's own, a video's poster, a GoPro clip's Drive frame
+      const th = it.full ? (it.src || it.full) : it.poster;
+      const img = th ? resolveUrl(th) : (it.type === 'drive' && it.id ? 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(it.id) + '&sz=w400' : '');
+      const face = r.heading != null ? _COMPASS[Math.round(((r.heading % 360) + 360) % 360 / 45) % 8] : '';
+      const vid = it.kind && it.kind !== 'photo';
+      return '<button type="button" class="mm-fan-t" data-fi="' + i + '" aria-label="' + escapeAttr((vid ? 'Video' : 'Photo') + ' ' + (i + 1) + (it.time ? ', ' + it.time : '') + (face ? ', facing ' + face : '')) + '"' +
+        (img ? ' style="background-image:url(\'' + escapeAttr(img) + '\')"' : '') + '><b>' + (i + 1) + '</b>' +
+        (vid ? '<span class="mm-fan-play"><span class="dcc-pbtn">' + PLAY_GLYPH + '</span></span>' : '') +
+        (face ? '<span class="mm-fan-face">' + face + '</span>' : '') + '</button>';
+    }).join('');
+    fan.innerHTML = '<div class="mm-fan-h"><div><b>' + escapeHtml((place ? place + ' · ' : '') + plur(recs.length, recs.some(r => r.it.kind && r.it.kind !== 'photo') ? 'shot' : 'photo') + ' here') + '</b>' +
+      (anyHeading ? '<span>The cones show which way each one faced</span>' : '') + '</div>' +
+      '<button type="button" class="mm-fan-x" aria-label="Close">&times;</button></div><div class="mm-fan-strip">' + thumbs + '</div>';
+    fan.hidden = false;
+    fan.parentNode.classList.add('mm-fan-open');
+    fan.querySelector('.mm-fan-x').addEventListener('click', mmCloseFan);
+    const strip = fan.querySelector('.mm-fan-strip');
+    strip.addEventListener('click', e => { const t = e.target.closest('[data-fi]'); if (t) openViewer(+t.dataset.fi); });
+    const hl = i => { if (mmFan) { mmFan.hl = i; mmDrawFan(); } };
+    strip.addEventListener('pointerover', e => { const t = e.target.closest('[data-fi]'); if (t) hl(+t.dataset.fi); });
+    strip.addEventListener('focusin', e => { const t = e.target.closest('[data-fi]'); if (t) hl(+t.dataset.fi); });
+    strip.addEventListener('pointerleave', () => hl(null));
+    mmDrawFan();
+  }
+  // the dots and cones are drawn in screen pixels, so they're redrawn after every pan or zoom
+  function mmDrawFan() {
+    if (!mmFan || !mmSpiderLayer || !mmMap) return;
+    mmSpiderLayer.clearLayers();
+    const R = 46, half = 26 * Math.PI / 180;
+    mmFan.recs.forEach((r, i) => {
+      const c = mmMap.latLngToContainerPoint([r.lat, r.lng]), on = mmFan.hl === i;
+      if (r.heading != null) {
+        const a = (r.heading - 90) * Math.PI / 180, pts = [[r.lat, r.lng]];
+        for (let k = 0; k <= 8; k++) { const t = a - half + (2 * half * k / 8); const ll = mmMap.containerPointToLatLng(L.point(c.x + R * Math.cos(t), c.y + R * Math.sin(t))); pts.push([ll.lat, ll.lng]); }
+        mmSpiderLayer.addLayer(L.polygon(pts, { color: '#7d5411', weight: 1.2, opacity: 0.9, fillColor: '#b68235', fillOpacity: on ? 0.7 : 0.38, interactive: false }));
+      }
+    });
+    mmFan.recs.forEach((r, i) => {
+      const on = mmFan.hl === i;
+      const mk = L.marker([r.lat, r.lng], { keyboard: false, zIndexOffset: on ? 20000 : 10000, title: (r.it.time || '') + ' · ' + r.p.name,
+        icon: L.divIcon({ className: 'mm-fan-dot' + (on ? ' on' : ''), iconSize: [20, 20], iconAnchor: [10, 10], html: '<span>' + (i + 1) + '</span>' }) });
+      mk.on('click', e => { if (e.originalEvent) L.DomEvent.stopPropagation(e.originalEvent); openViewer(i); });
+      mmSpiderLayer.addLayer(mk);
+    });
   }
   // big-cluster alternative: a scrollable thumbnail grid (like the place popup),
   // seeded so tapping a thumb previews it with prev/next across the cluster
@@ -2604,7 +2733,7 @@
   // grid-accelerated pixel clustering of mmAllItems at the current zoom
   function mmRenderMarkers() {
     if (!mmMap || !mmMarkers || !mmMap._loaded) return;
-    mmMarkers.clearLayers(); if (mmSpiderLayer) mmSpiderLayer.clearLayers(); mmSpiderKey = null;
+    mmMarkers.clearLayers(); if (mmSpiderLayer) mmSpiderLayer.clearLayers(); if (!mmFan) mmSpiderKey = null;
     const showFacing = root._mapmode.querySelector('#mm-facing').checked;
     const R = 40, recs = mmAllItems.map(o => { const pt = mmMap.latLngToContainerPoint([o.lat, o.lng]); o._x = pt.x; o._y = pt.y; o._used = false; return o; });
     const cells = new Map();
@@ -2694,8 +2823,8 @@
     mmMarkers = L.layerGroup().addTo(mmMap);      // item pins + cluster bubbles
     mmSpiderLayer = L.layerGroup().addTo(mmMap);  // fanned-out pins + their legs (on top)
     // re-cluster the pins whenever the view changes; collapse any open fan first
-    mmMap.on('movestart zoomstart', () => { if (mmSpiderLayer) mmSpiderLayer.clearLayers(); mmSpiderKey = null; });
-    mmMap.on('moveend zoomend', () => { if (mmMap && root.dataset.view === 'map') mmRenderMarkers(); });
+    mmMap.on('movestart zoomstart', () => { if (mmSpiderLayer) mmSpiderLayer.clearLayers(); if (!mmFan) mmSpiderKey = null; });
+    mmMap.on('moveend zoomend', () => { if (mmMap && root.dataset.view === 'map') { mmRenderMarkers(); mmDrawFan(); } });
     // tap empty map (not a pin/cluster — those stopPropagation) closes an open fan
     mmMap.on('click', () => { if (mmSpiderKey) mmCloseFan(); });
     mmMap.on('zoomend', renderMapLabels);
@@ -4131,9 +4260,32 @@
   }
   function mapsLink(lat, lng, cls) {
     if (lat == null || lng == null) return '';
-    return '<a class="' + (cls || 'dcc-tour-maplink') + '" href="https://www.google.com/maps?q=' +
-      lat + ',' + lng + '" target="_blank" rel="noopener" title="Open in Google Maps" ' +
+    const m = mapsTarget(lat, lng, 'This spot');
+    return '<a class="' + (cls || 'dcc-tour-maplink') + '" href="' + escapeAttr(m.href) + '"' + (m.newTab ? ' target="_blank"' : '') + ' rel="noopener" title="Open in Maps" ' +
       'onclick="event.stopPropagation()">' + dIcon('pin') + '</a>';
+  }
+
+  // ---- Timeline: how far, and which way, from one place to the next ----
+  const _COMPASS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
+  function legHTML(a, b) {
+    if (a.lat == null || a.lng == null || b.lat == null || b.lng == null) return '';
+    const km = _hav([a.lat, a.lng], [b.lat, b.lng]);
+    if (km < 0.025) return '';                       // the same spot, give or take a few steps
+    const r = Math.PI / 180, y = Math.sin((b.lng - a.lng) * r) * Math.cos(b.lat * r),
+      x = Math.cos(a.lat * r) * Math.sin(b.lat * r) - Math.sin(a.lat * r) * Math.cos(b.lat * r) * Math.cos((b.lng - a.lng) * r);
+    const dir = _COMPASS[Math.round(((Math.atan2(y, x) / r) + 360) % 360 / 45) % 8];
+    let d;
+    if (imp()) { const mi = km * 0.621371; d = mi < 0.1 ? fmt(Math.round(mi * 5280 / 10) * 10) + ' ft' : fmt1(mi) + ' mi'; }
+    else d = km < 1 ? fmt(Math.round(km * 100) * 10) + ' m' : fmt1(km) + ' km';
+    const foot = km <= 1.5 ? ' · about ' + Math.max(1, Math.round(km * 1000 / 70)) + ' min on foot' : '';
+    return '<div class="dcc-tour-leg"><span aria-hidden="true">↓</span> ' + d + ' ' + dir + foot + '</div>';
+  }
+  function fmt1(n) { return n >= 10 ? fmt(n) : n.toFixed(1); }
+  // the place's pin on the Timeline: a labelled Map button that opens the same maps menu as a photo's pin
+  function placeMapBtn(p) {
+    if (p.lat == null || p.lng == null) return '';
+    return '<button type="button" class="dcc-tour-mappill dcc-pinbtn" data-lat="' + p.lat + '" data-lng="' + p.lng + '" data-place="' + escapeAttr(p.name || '') + '"' +
+      ' aria-label="' + escapeAttr('Open ' + shortName(p.name) + ' in a maps app') + '">' + dIcon('pin') + '<span>Map</span></button>';
   }
 
   // ---- each photo's pin: its exact coordinates, opened in a maps app (or copied) ----
@@ -4145,6 +4297,14 @@
     return '<button type="button" class="dcc-tour-maplink cell dcc-pinbtn" data-lat="' + lat + '" data-lng="' + lng + '" data-place="' + escapeAttr(place || '') + '"' +
       ' aria-label="' + escapeAttr('Open this spot in a maps app: ' + fmtCoord(lat, lng)) + '">' + dIcon('pin') + '</button>';
   }
+  // "Open in Maps" goes to the device's own maps app: Apple Maps on iPhone, iPad and Mac (iPadOS reports itself
+  // as a Mac), the Android "geo:" link (the phone's default maps app, or its chooser), Google Maps anywhere else
+  function mapsTarget(lat, lng, name) {
+    const ua = navigator.userAgent || '', ll = lat + ',' + lng;
+    if (/Android/i.test(ua)) return { href: 'geo:' + ll + '?q=' + ll + '(' + encodeURIComponent(name) + ')', newTab: false };
+    if (/iPhone|iPad|iPod|Macintosh/i.test(ua)) return { href: 'https://maps.apple.com/?ll=' + ll + '&q=' + encodeURIComponent(name), newTab: true };
+    return { href: 'https://www.google.com/maps/search/?api=1&query=' + ll, newTab: true };
+  }
   let pinSheet = null, pinBack = null;
   function closePinSheet() {
     if (!pinSheet || pinSheet.hidden) return;
@@ -4155,9 +4315,8 @@
     if (!pinSheet) {
       pinSheet = el('div', 'dcc-pinsheet');
       pinSheet.setAttribute('role', 'dialog'); pinSheet.setAttribute('aria-modal', 'true'); pinSheet.setAttribute('aria-label', 'Open this spot in a maps app');
-      pinSheet.innerHTML = '<div class="ps-scrim"></div><div class="ps-panel"><div class="ps-head"><b class="ps-place"></b><span class="ps-coord"></span></div>' +
-        '<a class="ps-item" data-ps="apple" target="_blank" rel="noopener">Open in Apple Maps</a>' +
-        '<a class="ps-item" data-ps="google" target="_blank" rel="noopener">Open in Google Maps</a>' +
+      pinSheet.innerHTML = '<div class="ps-scrim"></div><div class="ps-panel"><b class="ps-place"></b>' +
+        '<a class="ps-open" data-ps="open" rel="noopener"><span class="lbp-ic">' + dIcon('pin') + '</span><span class="lbp-t"><b class="ps-coord"></b><span>Open in Maps</span></span></a>' +
         '<button type="button" class="ps-item" data-ps="copy">Copy coordinates</button>' +
         '<button type="button" class="ps-item ps-cancel" data-ps="cancel">Cancel</button></div>';
       pinSheet.addEventListener('click', e => {
@@ -4176,15 +4335,16 @@
       pinSheet.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); closePinSheet(); } });
       document.body.appendChild(pinSheet);
     }
-    const name = shortName(place) || 'This spot', c = fmtCoord(lat, lng), ll = lat + ',' + lng;
+    const name = shortName(place) || 'This spot', c = fmtCoord(lat, lng);
     pinSheet.querySelector('.ps-place').textContent = place || 'This spot';
     pinSheet.querySelector('.ps-coord').textContent = c;
     pinSheet.dataset.coord = lat.toFixed(5) + ', ' + lng.toFixed(5);
-    pinSheet.querySelector('[data-ps=apple]').href = 'https://maps.apple.com/?ll=' + ll + '&q=' + encodeURIComponent(name);
-    pinSheet.querySelector('[data-ps=google]').href = 'https://www.google.com/maps/search/?api=1&query=' + ll;
+    const open = pinSheet.querySelector('[data-ps=open]'), m = mapsTarget(lat, lng, name);
+    open.href = m.href;
+    if (m.newTab) open.target = '_blank'; else open.removeAttribute('target');
     pinBack = from || null;
     pinSheet.hidden = false;
-    pinSheet.querySelector('.ps-item').focus({ preventScroll: true });
+    pinSheet.querySelector('.ps-open').focus({ preventScroll: true });
   }
   // a pin tap opens the menu and nothing else (not the photo viewer under it)
   document.addEventListener('click', e => {
@@ -4806,8 +4966,8 @@
     }
 
     const toMin = t => { const a = (t || '').split(':'); return a.length === 2 ? +a[0]*60 + +a[1] : null; };
-    shownPlaces.forEach(({ p, pi }) => {
-      const anchor = 'place-' + pi;
+    shownPlaces.forEach(({ p, pi }, si) => {
+      const anchor = 'place-' + pi, nextP = shownPlaces[si + 1] && shownPlaces[si + 1].p;
       const its = placeItems(p);
       const time = p.from === p.to ? p.from : (p.from + '–' + p.to);
       let cum = '';
@@ -4826,7 +4986,7 @@
           '<span class="dcc-tour-railtime" aria-hidden="true">' + escapeHtml(p.from || '') + '</span>' +
           '<div class="dcc-tour-place-htext">' +
             '<h3>' + escapeHtml(p.name) + '</h3>' +
-            '<span class="dcc-tour-place-meta">' + [escapeHtml(time) + spent.replace(/^ · /, escapeHtml(time) ? ' · ' : ''), plur(its.length, 'shot')].filter(Boolean).join(' · ') + cum + ' ' + mapsLink(p.lat, p.lng, 'dcc-tour-maplink meta') + histPlaceLink(p.name, true) + '</span>' +
+            '<span class="dcc-tour-place-meta">' + [escapeHtml(time) + spent.replace(/^ · /, escapeHtml(time) ? ' · ' : ''), plur(its.length, 'shot')].filter(Boolean).join(' · ') + cum + ' ' + placeMapBtn(p) + histPlaceLink(p.name, true) + '</span>' +
           '</div>' +
           '<span class="dcc-tour-place-chevron" aria-hidden="true">▾</span>' +
         '</div>' +
@@ -4836,6 +4996,7 @@
           return th ? '<img loading="lazy" decoding="async" alt="" src="' + escapeAttr(resolveUrl(th)) + '">' : '';
         }).join('') + (its.length > 4 ? '<span class="rs-more">+' + (its.length - 4) + '</span>' : '') + '</div>' : '') +
         '<div class="dcc-tour-media" id="media-' + pi + '">' + its.map(it => renderItem(it)).join('') + '</div>' +
+        (nextP ? legHTML(p, nextP) : '') +
         '</section>';
     });
 

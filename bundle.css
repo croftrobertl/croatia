@@ -2042,14 +2042,16 @@ html.dcc-matrix-on .dcc-hp-siege .dcc-hist-note-k { color: #ff6b5e; }
 .dcc-then-chgdot { display: inline-block; width: 8px; height: 8px; margin-left: 4px; border-radius: 50%; background: #d9a22b; box-shadow: 0 0 0 1.5px #fff; vertical-align: 1px; }
 
 /* ===== each photo's pin: a round button that opens the photo's exact spot in a maps app ===== */
-.dcc-tour-root.dcc-tour-root .dcc-pinbtn.cell { position: absolute; right: 6px; bottom: 6px; left: auto; z-index: 2; width: 32px; height: 32px; padding: 0;
+.dcc-tour-root.dcc-tour-root .dcc-pinbtn.cell { position: absolute; right: 8px; bottom: 8px; left: auto; z-index: 2; width: 16px; height: 16px; padding: 0;
   display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer; opacity: 1; transform: none;
-  background: rgba(20, 19, 18, 0.62); color: #fff; box-shadow: 0 0 0 1.5px rgba(255,255,255,0.85); }
-.dcc-tour-root.dcc-tour-root .dcc-pinbtn.cell .dcc-di { width: 17px; height: 17px; color: #fff; }
-.dcc-tour-root.dcc-tour-root .dcc-pinbtn.cell:hover { background: rgba(20, 19, 18, 0.85); transform: none; }
+  background: #b68235; color: #fff; box-shadow: 0 0 0 1.5px rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.35); }
+/* the pin looks small but keeps a finger-sized tap area around it */
+.dcc-tour-root.dcc-tour-root .dcc-pinbtn.cell::before { content: ''; position: absolute; inset: -12px; border-radius: 50%; }
+.dcc-tour-root.dcc-tour-root .dcc-pinbtn.cell .dcc-di { width: 10px; height: 10px; color: #fff; }
+.dcc-tour-root.dcc-tour-root .dcc-pinbtn.cell:hover { background: #7d5411; transform: none; }
 .dcc-pinbtn:focus-visible { outline: 2px solid var(--dcc-tour-primary, #b68235); outline-offset: 2px; }
 /* phones' Media grid: the play button has the bottom-right corner, so the pin takes the bottom-left */
-@media (max-width: 800px) { .dcc-tour-root.dcc-tour-root .dcc-tour-gallery .dcc-tour-gal-grid .dcc-pinbtn.cell { width: 30px; height: 30px; right: auto; left: 5px; bottom: 5px; } }
+@media (max-width: 800px) { .dcc-tour-root.dcc-tour-root .dcc-tour-gallery .dcc-tour-gal-grid .dcc-pinbtn.cell { width: 15px; height: 15px; right: auto; left: 7px; bottom: 7px; } }
 /* in the viewer: the coordinates beside a large pin */
 .dcc-tour-lb-pin { pointer-events: auto; display: flex; align-items: center; gap: 10px; margin: 10px auto 0; padding: 7px 14px 7px 7px; max-width: 100%;
   border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; background: rgba(255,255,255,0.08); color: #eee; cursor: pointer; font: inherit; text-align: left; }
@@ -2066,12 +2068,78 @@ html.dcc-matrix-on .dcc-hp-siege .dcc-hist-note-k { color: #ff6b5e; }
   background: var(--dcc-tour-card-bg, #f8f4f4); border-radius: 18px 18px 0 0; box-shadow: 0 -8px 28px rgba(0,0,0,0.3);
   padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   font-family: var(--dcc-tour-font, Lora, Georgia, serif); color: var(--dcc-tour-text, #201f1d); }
-.dcc-pinsheet .ps-head { display: grid; gap: 2px; padding: 10px 4px 12px; text-align: center; border-bottom: 1px solid var(--dcc-tour-border, #d7d3d3); }
-.dcc-pinsheet .ps-place { font-size: 0.95rem; }
-.dcc-pinsheet .ps-coord { font-size: 0.86rem; color: var(--dcc-tour-muted, #736f6a); font-variant-numeric: tabular-nums; }
+.dcc-pinsheet .ps-place { display: block; padding: 12px 4px 10px; text-align: center; font-size: 0.95rem; }
+/* "Open in Maps": the same pill as the photo viewer's (gold pin, the coordinates, then the action) */
+.dcc-pinsheet .ps-open { display: flex; align-items: center; gap: 10px; justify-self: center; max-width: 100%; margin: 0 0 10px; padding: 7px 16px 7px 7px;
+  border: 1px solid var(--dcc-tour-border, #d7d3d3); border-radius: 999px; background: #fff; color: var(--dcc-tour-text, #201f1d); text-decoration: none; cursor: pointer; }
+.dcc-pinsheet .ps-open .lbp-ic { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #b68235; }
+.dcc-pinsheet .ps-open .lbp-ic .dcc-di { width: 19px; height: 19px; color: #fff; }
+.dcc-pinsheet .ps-open .lbp-t { display: grid; line-height: 1.25; text-align: left; }
+.dcc-pinsheet .ps-open .lbp-t b { font-size: 0.9rem; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+.dcc-pinsheet .ps-open .lbp-t span { font-size: 0.8rem; color: var(--dcc-tour-accent-deep, #7d5411); }
+.dcc-pinsheet .ps-open:hover { border-color: #b68235; }
+.dcc-pinsheet .ps-open:focus-visible { outline: 2px solid var(--dcc-tour-primary, #b68235); outline-offset: 2px; }
+.dcc-pinsheet [data-ps=copy] { border-top: 1px solid var(--dcc-tour-border, #d7d3d3); }
 .dcc-pinsheet .ps-item { display: block; width: 100%; min-height: 52px; padding: 14px 4px; border: 0; border-bottom: 1px solid var(--dcc-tour-border, #d7d3d3);
   background: none; font: inherit; font-size: 1rem; text-align: center; text-decoration: none; color: var(--dcc-tour-accent-deep, #7d5411); cursor: pointer; }
 .dcc-pinsheet .ps-cancel { border-bottom: 0; font-weight: 600; color: var(--dcc-tour-text, #201f1d); }
 .dcc-pinsheet .ps-item:focus-visible { outline: 2px solid var(--dcc-tour-primary, #b68235); outline-offset: -2px; }
 html.dcc-matrix-on .dcc-pinsheet .ps-panel { background: #021004; color: #bdffc6; }
 html.dcc-matrix-on .dcc-pinsheet .ps-item { color: #46e05a; border-color: rgba(0,255,70,0.3); }
+html.dcc-matrix-on .dcc-pinsheet .ps-open { background: #021004; color: #bdffc6; border-color: rgba(0,255,70,0.4); }
+html.dcc-matrix-on .dcc-pinsheet .ps-open .lbp-t span { color: #46e05a; }
+
+/* ===== Timeline: the place's Map button, and how far and which way to the next place ===== */
+.dcc-tour-root.dcc-tour-root .dcc-tour-mappill { position: relative; display: inline-flex; align-items: center; gap: 3px; margin: 0 0 0 6px; padding: 1px 9px 1px 6px;
+  border: 1px solid var(--dcc-tour-primary, #b68235); border-radius: 999px; background: transparent; color: var(--dcc-tour-accent-deep, #7d5411);
+  font: inherit; font-size: 0.76rem; font-weight: 600; line-height: 1.5; vertical-align: 0; cursor: pointer; white-space: nowrap; }
+.dcc-tour-root.dcc-tour-root .dcc-tour-mappill .dcc-di { width: 12px; height: 12px; color: currentColor; }
+.dcc-tour-root.dcc-tour-root .dcc-tour-mappill:hover { background: rgba(182, 130, 53, 0.12); }
+.dcc-tour-root.dcc-tour-root .dcc-tour-mappill::after { content: ""; position: absolute; inset: -12px -4px; }
+.dcc-tour-leg { margin: 0.6rem 0 -0.4rem; padding: 3px 10px; border-left: 2px dashed #c9b08a; font-size: 0.8rem; color: var(--dcc-tour-accent-deep, #7d5411); font-variant-numeric: tabular-nums; }
+@media (max-width: 800px) {
+  /* on the time rail the dashed line is the rail itself, between this stop and the next */
+  .dcc-tour-leg { margin: 0.5rem 0 -0.3rem; padding: 2px 0; border-left: 0; }
+}
+html.dcc-matrix-on .dcc-tour-leg, html.dcc-matrix-on .dcc-tour-root .dcc-tour-mappill { color: #46e05a; border-color: rgba(0,255,70,0.45); }
+
+/* ===== Map: a spot's photos fan out (numbered dots, cones for the way each faced, a strip of the photos) ===== */
+.mm-fan-dot { background: none; border: 0; }
+.mm-fan-dot span { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #7d5411; color: #fff; font: 700 11px/1 Lora, Georgia, serif;
+  box-shadow: 0 0 0 2px #fff, 0 1px 4px rgba(0,0,0,0.4); cursor: pointer; }
+.mm-fan-dot.on span { background: #b68235; transform: scale(1.2); }
+.mm-fan { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 600; padding: 8px 10px 10px; border-radius: var(--dcc-tour-radius, 12px);
+  background: var(--dcc-tour-card-bg, #f8f4f4); border: 1px solid var(--dcc-tour-border, #d7d3d3); box-shadow: 0 6px 22px rgba(0,0,0,0.28); }
+.mm-fan[hidden] { display: none; }
+/* while a spot's photos are fanned out: its count bubble and the Old Borders bar step aside */
+.mm-fan-open .mm-cl.mm-cl-fanned { visibility: hidden; }
+.mm-fan-open .dcc-then-bar { visibility: hidden; }
+.mm-fan-h { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 7px; }
+.mm-fan-h > div { flex: 1; display: grid; line-height: 1.3; }
+.mm-fan-h b { font-size: 0.9rem; color: var(--dcc-tour-text, #201f1d); }
+.mm-fan-h span { font-size: 0.76rem; color: var(--dcc-tour-muted, #736f6a); }
+.dcc-tour-root.dcc-tour-root .mm-fan-x { flex: none; width: 32px; height: 32px; margin: -4px -4px 0 0; padding: 0; border: 0; border-radius: 50%; background: none;
+  font-size: 1.4rem; line-height: 1; color: var(--dcc-tour-muted, #736f6a); cursor: pointer; }
+.mm-fan-strip { display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+.dcc-tour-root.dcc-tour-root .mm-fan-t { position: relative; flex: none; width: 92px; height: 92px; padding: 0; border: 0; border-radius: 8px; scroll-snap-align: start;
+  background: var(--dcc-tour-border, #d7d3d3) center / cover no-repeat; cursor: pointer; overflow: hidden; }
+.mm-fan-t > b { position: absolute; left: 5px; top: 5px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #7d5411; color: #fff;
+  font: 700 10.5px/1 Lora, Georgia, serif; box-shadow: 0 0 0 1.5px #fff; }
+.mm-fan-face { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 4px 4px; background: linear-gradient(transparent, rgba(0,0,0,0.62));
+  color: #fff; font-size: 0.72rem; text-align: center; }
+.mm-fan-play { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.mm-fan-t:focus-visible { outline: 2px solid var(--dcc-tour-primary, #b68235); outline-offset: 2px; }
+@media (max-width: 800px) { .dcc-tour-root.dcc-tour-root .mm-fan-t { width: 84px; height: 84px; } }
+html.dcc-matrix-on .mm-fan { background: #021004; border-color: rgba(0,255,70,0.4); }
+html.dcc-matrix-on .mm-fan-h b { color: #bdffc6; }
+
+/* ===== History place page: "You stood here", exactly where around it your photos were taken ===== */
+.dcc-hp-you { margin: 0.4rem 0 1rem; }
+.dcc-hp-you-map { height: 190px; margin: 6px 0 8px; border-radius: var(--dcc-tour-radius, 12px); overflow: hidden; background: #2c3a3e; border: 1px solid var(--dcc-tour-border, #d7d3d3); }
+.dcc-hp-you-map .leaflet-control-attribution { font-size: 9px; line-height: 1.3; }
+.dcc-hp-you p { margin: 0 0 4px; font-size: 0.9rem; }
+.dcc-hp-you-ref { background: none; border: 0; }
+.dcc-hp-you-ref i { position: absolute; left: 0; top: 0; width: 14px; height: 14px; box-sizing: border-box; background: #fff; border: 3px solid #7d5411; transform: rotate(45deg); }
+.dcc-hp-you-ref span { position: absolute; left: 18px; top: -3px; white-space: nowrap; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,0.92); color: #201f1d;
+  font: 600 11px/1.5 Lora, Georgia, serif; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.dcc-hp-you-ref.left span { left: auto; right: 18px; }
