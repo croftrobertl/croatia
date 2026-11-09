@@ -3908,6 +3908,21 @@
       root.appendChild(g);
       const fbtn = g.querySelector('.dcc-tour-galfilterbtn');
       fbtn.addEventListener('click', () => { const on = !g.classList.contains('filters-open'); g.classList.toggle('filters-open', on); fbtn.setAttribute('aria-expanded', on ? 'true' : 'false'); });
+      // the date strip shows only while you scroll the photos (as in the Photos app), and never over the
+      // masthead: it appears once the grid reaches the top of the screen and fades about 1.5 s after you stop
+      {
+        const scrub = g.querySelector('.dcc-gal-scrub'), grid = g.querySelector('#dcc-galgrid');
+        let hideT = 0, hold = false;
+        const later = () => { clearTimeout(hideT); hideT = setTimeout(() => { if (!hold) g.classList.remove('scrub-on'); }, 1500); };
+        window.addEventListener('scroll', () => {
+          if (root.dataset.view !== 'gallery') return;
+          if (grid.getBoundingClientRect().top > 120) { clearTimeout(hideT); g.classList.remove('scrub-on'); return; }
+          g.classList.add('scrub-on'); later();
+        }, { passive: true });
+        scrub.addEventListener('pointerdown', () => { hold = true; clearTimeout(hideT); });
+        const release = () => { hold = false; later(); };
+        scrub.addEventListener('pointerup', release); scrub.addEventListener('pointercancel', release); scrub.addEventListener('pointerleave', release);
+      }
       g.querySelector('.dcc-gal-scrub').addEventListener('click', e => {
         const b = e.target.closest('[data-sdi]'); if (!b) return;
         const di = +b.dataset.sdi, at = galCur ? galCur.findIndex(x => x.di === di) : -1;

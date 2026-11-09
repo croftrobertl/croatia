@@ -823,7 +823,8 @@ body.dcc-tour-resizing { cursor: col-resize; user-select: none; }
 /* gentle fade-in when a day loads */
 @keyframes dcc-fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .dcc-tour-dayhead { animation: dcc-fadein 0.28s ease both; }
-@media (prefers-reduced-motion: reduce) { .dcc-tour-dayhead { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .dcc-gal-scrub { transition: none; } .dcc-tour-dayhead { animation: none; } }
 
 /* ===== playable video/clip cells (poster + tap to play) ===== */
 .dcc-tour-play-cell { cursor: pointer; background: #000; }
@@ -1967,7 +1968,7 @@ html.dcc-matrix-on .dcc-hp-siege .dcc-hist-note-k { color: #ff6b5e; }
   .dcc-tour-gallery.filters-open .dcc-tour-gal-bar { display: flex; }
   .dcc-tour-gallery .dcc-tour-gal-count { display: none; }
   /* three square tiles across; the time and map pin stay off the small tiles */
-  .dcc-tour-gallery .dcc-tour-gal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding-right: 30px; }
+  .dcc-tour-gallery .dcc-tour-gal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding-right: 0; }
   .dcc-tour-gallery .dcc-tour-gal-grid .dcc-tour-cell { aspect-ratio: 1; margin: 0; border-radius: 0; overflow: hidden; position: relative; min-height: 0; }
   .dcc-tour-gallery .dcc-tour-gal-grid .dcc-tour-cell img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 0; }
   .dcc-tour-gallery .dcc-tour-gal-grid .dcc-tour-cell-time,
@@ -1979,9 +1980,13 @@ html.dcc-matrix-on .dcc-hp-siege .dcc-hist-note-k { color: #ff6b5e; }
     padding: 10px 1rem 6px; background: color-mix(in srgb, var(--dcc-tour-bg) 94%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); scroll-margin-top: 0; }
   .dcc-gal-dayh b { font-size: 0.92rem; color: var(--dcc-tour-text); }
   .dcc-gal-dayh span { font-size: 0.78rem; color: var(--dcc-tour-muted); font-variant-numeric: tabular-nums; }
-  .dcc-tour-gallery.gal-bytime .dcc-gal-scrub { display: flex; flex-direction: column; justify-content: space-between; position: fixed; z-index: 20; right: 2px;
-    top: calc(64px + env(safe-area-inset-top, 0px)); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); width: 28px; }
-  .dcc-gal-scrub button { flex: 1; min-height: 0; border: 0; background: none; padding: 0; font: 600 8.5px/1 var(--dcc-tour-font); color: var(--dcc-tour-muted); cursor: pointer;
+  .dcc-tour-gallery.gal-bytime .dcc-gal-scrub { display: flex; flex-direction: column; justify-content: space-between; position: fixed; z-index: 20; right: 4px;
+    top: calc(64px + env(safe-area-inset-top, 0px)); bottom: calc(var(--dcc-dock-gap, 8px) + 76px); width: 38px; padding: 6px 0;
+    border-radius: 12px; background: color-mix(in srgb, var(--dcc-tour-card-bg) 92%, transparent); box-shadow: 0 2px 10px rgba(0,0,0,0.14);
+    opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  /* only while scrolling the photos (see the gallery's scroll handler) */
+  .dcc-tour-gallery.gal-bytime.scrub-on .dcc-gal-scrub { opacity: 1; pointer-events: auto; }
+  .dcc-gal-scrub button { flex: 1; min-height: 0; border: 0; background: none; padding: 0; font: 600 10px/1 var(--dcc-tour-font); color: var(--dcc-tour-muted); cursor: pointer;
     font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   .dcc-gal-scrub button:hover, .dcc-gal-scrub button:focus-visible { color: var(--dcc-tour-primary); outline: none; }
 }
