@@ -4136,6 +4136,64 @@
       'onclick="event.stopPropagation()">' + dIcon('pin') + '</a>';
   }
 
+  // ---- each photo's pin: its exact coordinates, opened in a maps app (or copied) ----
+  function fmtCoord(lat, lng) {
+    return Math.abs(lat).toFixed(5) + '° ' + (lat < 0 ? 'S' : 'N') + ', ' + Math.abs(lng).toFixed(5) + '° ' + (lng < 0 ? 'W' : 'E');
+  }
+  function pinButton(lat, lng, place) {
+    if (lat == null || lng == null) return '';
+    return '<button type="button" class="dcc-tour-maplink cell dcc-pinbtn" data-lat="' + lat + '" data-lng="' + lng + '" data-place="' + escapeAttr(place || '') + '"' +
+      ' aria-label="' + escapeAttr('Open this spot in a maps app: ' + fmtCoord(lat, lng)) + '">' + dIcon('pin') + '</button>';
+  }
+  let pinSheet = null, pinBack = null;
+  function closePinSheet() {
+    if (!pinSheet || pinSheet.hidden) return;
+    pinSheet.hidden = true;
+    if (pinBack && pinBack.isConnected) pinBack.focus();
+  }
+  function openPinSheet(lat, lng, place, from) {
+    if (!pinSheet) {
+      pinSheet = el('div', 'dcc-pinsheet');
+      pinSheet.setAttribute('role', 'dialog'); pinSheet.setAttribute('aria-modal', 'true'); pinSheet.setAttribute('aria-label', 'Open this spot in a maps app');
+      pinSheet.innerHTML = '<div class="ps-scrim"></div><div class="ps-panel"><div class="ps-head"><b class="ps-place"></b><span class="ps-coord"></span></div>' +
+        '<a class="ps-item" data-ps="apple" target="_blank" rel="noopener">Open in Apple Maps</a>' +
+        '<a class="ps-item" data-ps="google" target="_blank" rel="noopener">Open in Google Maps</a>' +
+        '<button type="button" class="ps-item" data-ps="copy">Copy coordinates</button>' +
+        '<button type="button" class="ps-item ps-cancel" data-ps="cancel">Cancel</button></div>';
+      pinSheet.addEventListener('click', e => {
+        const t = e.target.closest('[data-ps]');
+        if (e.target.classList.contains('ps-scrim') || (t && t.dataset.ps === 'cancel')) { closePinSheet(); return; }
+        if (!t) return;
+        if (t.dataset.ps === 'copy') {
+          const txt = pinSheet.dataset.coord;
+          const done = () => { toast('Copied ' + txt); closePinSheet(); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, () => { toast(txt); closePinSheet(); });
+          else { toast(txt); closePinSheet(); }
+          return;
+        }
+        setTimeout(closePinSheet, 0);   // the link opens the maps app; the sheet steps aside
+      });
+      pinSheet.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); closePinSheet(); } });
+      document.body.appendChild(pinSheet);
+    }
+    const name = shortName(place) || 'This spot', c = fmtCoord(lat, lng), ll = lat + ',' + lng;
+    pinSheet.querySelector('.ps-place').textContent = place || 'This spot';
+    pinSheet.querySelector('.ps-coord').textContent = c;
+    pinSheet.dataset.coord = lat.toFixed(5) + ', ' + lng.toFixed(5);
+    pinSheet.querySelector('[data-ps=apple]').href = 'https://maps.apple.com/?ll=' + ll + '&q=' + encodeURIComponent(name);
+    pinSheet.querySelector('[data-ps=google]').href = 'https://www.google.com/maps/search/?api=1&query=' + ll;
+    pinBack = from || null;
+    pinSheet.hidden = false;
+    pinSheet.querySelector('.ps-item').focus({ preventScroll: true });
+  }
+  // a pin tap opens the menu and nothing else (not the photo viewer under it)
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('.dcc-pinbtn');
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    openPinSheet(+b.dataset.lat, +b.dataset.lng, b.dataset.place, b);
+  }, true);
+
   function fmt(n) { return Math.round(n).toLocaleString(); }
   function shortName(s) { return String(s || '').split(/[,(]/)[0].trim(); }
   // a representative "cover" thumbnail for a day (middle shot of its biggest place)
@@ -4844,7 +4902,7 @@
   }
 
   function renderItem(item, vi) {
-    const extras = mapsLink(item.lat, item.lng, 'dcc-tour-maplink cell');
+    const extras = pinButton(item.lat, item.lng, item.place);
     // claim this item's slot in the shared viewer list: story builds it inline
     // (vi undefined), gallery pre-builds the list and passes the index.
     const viewable = (item.type === 'drive' && item.id) ||
@@ -4921,6 +4979,7 @@
       poster: it.poster ? resolveUrl(it.poster) : '',
       id: it.id || '',
       place: it.place || place || '',
+      lat: it.lat != null ? it.lat : null, lng: it.lng != null ? it.lng : null,
       time: it.time || '',
       date: it._dlabel || (it._date ? dDate({ date: it._date }) : '')
     };
@@ -5100,6 +5159,15 @@
     }
     const cap = el0.querySelector('.dcc-tour-lightbox-cap');
     cap.textContent = [it.place, it.date, it.time].filter(Boolean).join(' · ');
+    // the photo's exact spot, one tap from a maps app
+    if (it.lat != null && it.lng != null) {
+      const pr = document.createElement('button');
+      pr.type = 'button'; pr.className = 'dcc-tour-lb-pin dcc-pinbtn';
+      pr.dataset.lat = it.lat; pr.dataset.lng = it.lng; pr.dataset.place = it.place || '';
+      pr.setAttribute('aria-label', 'Open this spot in a maps app: ' + fmtCoord(it.lat, it.lng));
+      pr.innerHTML = '<span class="lbp-ic">' + dIcon('pin') + '</span><span class="lbp-t"><b>' + escapeHtml(fmtCoord(it.lat, it.lng)) + '</b><span>Open in Maps</span></span>';
+      cap.appendChild(pr);
+    }
     // one link to the History tab for the spot this was taken
     if (it.place && histPlaceOk(it.place)) {
       const a = document.createElement('button');
