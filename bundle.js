@@ -892,7 +892,6 @@
       box.addEventListener('mouseover', e => lit(e, true)); box.addEventListener('mouseout', e => lit(e, false));
       box.addEventListener('focusin', e => lit(e, true)); box.addEventListener('focusout', e => lit(e, false));
       box.addEventListener('input', rootsInput);
-      box.addEventListener('submit', rootsSubmit);
       box.addEventListener('change', e => {
         rootsInput(e);
         if (!e.target.matches('.dcc-story-follow input')) return;
@@ -974,7 +973,6 @@
           '<div class="dcc-chron-b">' +
             '<h3>' + escapeHtml(ev.title) + (ev.tag ? ' <span class="dcc-chron-tag">' + CHRON_TAGS[ev.tag] + '</span>' : '') + '</h3>' +
             '<p>' + glossHtml(ev.text) + '</p>' +
-            famLinesHtml(ev) +
             chronPhotosHtml(ev) +
             '<div class="dcc-chron-acts"><button type="button" class="dcc-chron-go">See it on the map ›</button>' +
               (ev.focus === 'siege' && chronStrand !== 'siege' ? '<button type="button" class="dcc-chron-focus" data-strand="siege">The siege in detail ›</button>' : '') +
@@ -1232,15 +1230,12 @@
     const ent = ev => '<div class="dcc-pr-ev"><div class="dcc-pr-y">' + escapeHtml(ev.y) + '</div><div>' +
       '<h3>' + escapeHtml(ev.title) + (ev.tag ? ' <em>(' + CHRON_TAGS[ev.tag] + ')</em>' : '') + '</h3>' +
       '<p>' + escapeHtml(ev.text) + '</p>' +
-      (famLines(ev).length ? '<p class="dcc-pr-fam">' + famLines(ev).join(' · ') + '</p>' : '') +
       '<p class="dcc-pr-src">' + escapeHtml(evidenceOf(ev.src)[1]) + ': ' + ev.src.map(([l, u]) => escapeHtml(l) + ' — ' + escapeHtml(u)).join('; ') + '</p></div></div>';
     const pr = el('div', 'dcc-print',
       '<h1>Ragusa, Konavle &amp; Dalmatia</h1><p class="dcc-pr-sub">A family chronicle · Crofts in Croatia · printed ' +
         escapeHtml(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })) + '</p>' +
       chron.strands.map(st => '<section><h2>' + escapeHtml(st.name) + '</h2><p class="dcc-pr-intro">' + escapeHtml(st.intro) + '</p>' +
         st.events.map(ent).join('') + '</section>').join('') +
-      (famLoad().length ? '<section><h2>Our family</h2><ul>' + famLoad().map(p => '<li>' + escapeHtml(p.n) + ' · ' + p.b + (p.d ? '–' + p.d : '') +
-        (p.v ? ' · ' + escapeHtml(p.v) : '') + '</li>').join('') + '</ul></section>' : '') +
       '<section><h2>' + escapeHtml(chron.records.title) + '</h2><ul>' + chron.records.points.map(p => '<li>' + escapeHtml(p) + '</li>').join('') + '</ul>' +
         '<p class="dcc-pr-src">' + chron.records.src.map(([l, u]) => escapeHtml(l) + ' — ' + escapeHtml(u)).join('; ') + '</p></section>');
     document.body.appendChild(pr);
@@ -1565,31 +1560,6 @@
   }
   function famVillage() { try { return localStorage.getItem('dcc-fam-village') || ''; } catch (e) { return ''; } }
 
-  // ---- Your family's thread: people you add (on this device) appear in the chronicle with their
-  //      age at each event, and in the printed chronicle ----
-  function famLoad() { try { return JSON.parse(localStorage.getItem('dcc-family') || '[]').filter(p => p && p.n && isFinite(p.b)); } catch (e) { return []; } }
-  function famSave(list) { try { localStorage.setItem('dcc-family', JSON.stringify(list)); } catch (e) { /* storage blocked */ } }
-  // the entry's own year: the first year it names ("1427–1672" → 1427), else its sort year
-  const evYear = ev => { const m = /(\d{3,4})/.exec(ev.y); return m ? (/BC/.test(ev.y) ? -m[1] : +m[1]) : ev.sort; };
-  function famLines(ev) {
-    const y = evYear(ev);
-    return famLoad().map(p => {
-      const age = y - p.b, end = isFinite(p.d) && p.d ? p.d : p.b + 100;
-      if (age < 0 || y > end) return null;
-      return escapeHtml(p.n) + (age === 0 ? ' was born that year' : ' was ' + age) + (y === p.d ? ' and died that year' : '');
-    }).filter(Boolean);
-  }
-  function famLinesHtml(ev) {
-    const l = famLines(ev);
-    return l.length ? '<p class="dcc-chron-fam">' + svgIcon('history') + '<span>' + l.join(' · ') + '</span></p>' : '';
-  }
-  function famHtml() {
-    const list = famLoad();
-    return '<ul class="dcc-fam-list">' + (list.length ? list.map((p, i) =>
-        '<li><b>' + escapeHtml(p.n) + '</b><span>' + p.b + (p.d ? '–' + p.d : '') + (p.v ? ' · ' + escapeHtml(p.v) : '') + '</span>' +
-        '<button type="button" data-fam-del="' + i + '" aria-label="Remove ' + escapeAttr(p.n) + '">Remove</button></li>').join('')
-      : '<li class="dcc-fam-empty">No one added yet.</li>') + '</ul>';
-  }
   function chronRootsHtml(r) {
     const fv = famVillage();
     return '<section class="dcc-roots-sec"><h3 class="dcc-chron-rech">Where’s my village?</h3>' +
@@ -1597,14 +1567,6 @@
         '<label class="dcc-village-pick"><span>Village or area</span><input type="search" list="dcc-villages" autocomplete="off" placeholder="e.g. Čilipi" value="' + escapeAttr(fv) + '">' +
         '<datalist id="dcc-villages">' + VILLAGES.map(v => '<option value="' + escapeAttr(v.n) + '">').join('') + '</datalist></label>' +
         '<div class="dcc-village-out" aria-live="polite" data-v="' + escapeAttr(villageByName(fv) ? villageByName(fv).n : '') + '">' + villageHtml(villageByName(fv)) + '</div></section>' +
-      '<section class="dcc-roots-sec"><h3 class="dcc-chron-rech">Your family’s thread</h3>' +
-        '<p class="dcc-roots-p">Add the people you know of. Every chronicle entry then shows how old each of them was — saved on this device only.</p>' +
-        '<form class="dcc-fam-form"><label><span>Name</span><input name="n" required maxlength="60" autocomplete="off"></label>' +
-          '<label><span>Born</span><input name="b" required inputmode="numeric" pattern="-?[0-9]{1,4}" placeholder="1452"></label>' +
-          '<label><span>Died</span><input name="d" inputmode="numeric" pattern="-?[0-9]{1,4}" placeholder="optional"></label>' +
-          '<label class="dcc-fam-v"><span>Village</span><input name="v" list="dcc-villages" autocomplete="off" placeholder="optional"></label>' +
-          '<button type="submit">Add</button></form>' +
-        famHtml() + '</section>' +
       '<section class="dcc-roots-sec"><h3 class="dcc-chron-rech">' + escapeHtml(r.title) + '</h3>' +
         '<ul class="dcc-chron-rec">' + r.points.map(p => '<li>' + escapeHtml(p) + '</li>').join('') + '</ul>' + chronSrcHtml(r.src) + '</section>';
   }
@@ -1634,27 +1596,7 @@
       tripFamLine();
       return true;
     }
-    const del = e.target.closest('[data-fam-del]');
-    if (del) {
-      const list = famLoad(); list.splice(+del.dataset.famDel, 1); famSave(list);
-      del.closest('.dcc-roots-sec').querySelector('.dcc-fam-list').outerHTML = famHtml();
-      return true;
-    }
     return false;
-  }
-  function rootsSubmit(e) {
-    const form = e.target.closest('.dcc-fam-form');
-    if (!form) return;
-    e.preventDefault();
-    const n = form.n.value.trim(), b = parseInt(form.b.value, 10), d = parseInt(form.d.value, 10), v = form.v.value.trim();
-    if (!n || !isFinite(b)) return;
-    const list = famLoad();
-    list.push({ n, b, d: isFinite(d) ? d : null, v: v || null });
-    list.sort((x, y) => x.b - y.b);
-    famSave(list);
-    form.reset();
-    form.closest('.dcc-roots-sec').querySelector('.dcc-fam-list').outerHTML = famHtml();
-    toast(n + ' added to the chronicle ✓');
   }
   // the family village as an extra line in "Your trip, then"
   function tripFamLine(f) {

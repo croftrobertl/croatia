@@ -1015,8 +1015,6 @@ html.dcc-matrix-on .dcc-chron-tabs button[aria-selected="true"] { color: #000; }
   color: var(--dcc-tour-text); background: var(--dcc-tour-card-bg); border: 1px solid var(--dcc-tour-border); box-shadow: var(--dcc-tour-shadow); }
 .dcc-gl-pop.on { display: block; }
 .dcc-gl-pop b { color: var(--dcc-tour-accent-deep); }
-.dcc-chron-fam { display: flex; gap: 7px; align-items: flex-start; margin: 0 0 6px; font-size: 0.86rem; color: var(--dcc-tour-accent-deep); }
-.dcc-chron-fam .dcc-ic { width: 15px; height: 15px; flex: none; margin-top: 2px; }
 .dcc-chron-postcard { font: inherit; font-family: var(--dcc-tour-font-head); font-size: 0.8rem; font-weight: 600; color: var(--dcc-tour-accent-deep);
   background: none; border: 0; padding: 6px 0; min-height: 44px; cursor: pointer; }
 .dcc-chron-postcard:hover { text-decoration: underline; }
@@ -1145,7 +1143,7 @@ html.dcc-matrix-on .dcc-chron-tabs button[aria-selected="true"] { color: #000; }
 .dcc-roots-sec { display: grid; gap: 8px; padding: 14px; background: var(--dcc-tour-card-bg); border: 1px solid var(--dcc-tour-border);
   border-radius: var(--dcc-tour-radius); }
 .dcc-roots-p { margin: 0; font-size: 0.92rem; color: var(--dcc-tour-muted); }
-.dcc-village-pick, .dcc-fam-form label { display: grid; gap: 4px; font-size: 0.8rem; color: var(--dcc-tour-muted); }
+.dcc-village-pick { display: grid; gap: 4px; font-size: 0.8rem; color: var(--dcc-tour-muted); }
 .dcc-roots-sec input { font: inherit; font-size: 1rem; color: var(--dcc-tour-text); background: var(--dcc-tour-bg); border: 1px solid var(--dcc-tour-border);
   border-radius: var(--dcc-tour-radius); padding: 10px 12px; min-height: 44px; min-width: 0; width: 100%; box-sizing: border-box; }
 .dcc-roots-sec input:focus { outline: 2px solid var(--dcc-tour-primary); outline-offset: 1px; }
@@ -1166,16 +1164,6 @@ html.dcc-matrix-on .dcc-chron-tabs button[aria-selected="true"] { color: #000; }
 html.dcc-matrix-on .dcc-vt li.war .dcc-vt-t { color: inherit; }
 .dcc-vt-note { margin: 4px 0 0; font-size: 0.8rem; color: var(--dcc-tour-muted); }
 @media (max-width: 560px) { .dcc-vt button { grid-template-columns: 7.6em minmax(0, 1fr); gap: 8px; padding: 7px 4px; } }
-.dcc-fam-form { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr) auto; gap: 8px; align-items: end; }
-.dcc-fam-form button { font: inherit; font-family: var(--dcc-tour-font-head); font-weight: 600; color: #fff; background: var(--dcc-tour-accent-deep);
-  border: 0; border-radius: 999px; padding: 0 18px; min-height: 44px; cursor: pointer; }
-html.dcc-matrix-on .dcc-fam-form button { color: #000; }
-@media (max-width: 700px) { .dcc-fam-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .dcc-fam-form label:first-child, .dcc-fam-v { grid-column: 1 / -1; } }
-.dcc-fam-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.dcc-fam-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 4px 0; border-bottom: 1px solid var(--dcc-tour-border); }
-.dcc-fam-list li span { font-size: 0.88rem; color: var(--dcc-tour-muted); }
-.dcc-fam-list button { margin-left: auto; font: inherit; font-size: 0.8rem; color: var(--dcc-tour-muted); background: none; border: 0; min-height: 40px; cursor: pointer; }
-.dcc-fam-empty { color: var(--dcc-tour-muted); font-size: 0.88rem; font-style: italic; }
 .dcc-hist-trip-fam { margin: 4px 0 0; padding: 8px 8px 0; border-top: 1px dashed var(--dcc-tour-border); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 0.95rem; }
 .dcc-hist-trip-famk { flex-basis: 100%; font-family: var(--dcc-tour-font-head); font-size: 10.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dcc-tour-accent-deep); }
 
@@ -1223,7 +1211,6 @@ html.dcc-matrix-on .dcc-fam-form button { color: #000; }
   .dcc-pr-ev { display: grid; grid-template-columns: 1.1in 1fr; gap: 10pt; padding: 5pt 0; border-top: 1px solid #ddd; break-inside: avoid; }
   .dcc-pr-y { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 600; font-size: 13pt; color: #7d5411; text-align: right; }
   .dcc-pr-src { font-size: 8pt; color: #666; word-break: break-word; }
-  .dcc-pr-fam { font-style: italic; color: #7d5411; }
   .dcc-print section { break-before: auto; }
 }
 /* muted text (the map's era names, ticks and notes, the chronicle's captions) sits at 4.46:1 on this
