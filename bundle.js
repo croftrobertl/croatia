@@ -4412,7 +4412,7 @@
       sup = '<div class="dcc-tour-superlatives">' +
         '<span class="sup-tip" tabindex="0" data-tip="' + escapeAttr('The single day with the most photos, videos and clips taken.') + '">' + dIcon('belltower') + ' Busiest day <b>' + escapeHtml((busiest.index && DATA.days[busiest.index - 1]) ? dWeekday(DATA.days[busiest.index - 1]).slice(0, 3) + ' ' + dDate(DATA.days[busiest.index - 1]) : busiest.label) + '</b> · ' + busiest.count + ' shots<span class="t-info" aria-hidden="true">ⓘ</span></span>' +
         (captured ? '<span class="sup-tip" tabindex="0" data-tip="' + escapeAttr('The place with the most photos and videos across the whole trip.') + '">' + dIcon('pin') + ' Most captured <b>' + escapeHtml(shortName(captured.name)) + '</b> · ' + captured.count + '<span class="t-info" aria-hidden="true">ⓘ</span></span>' : '') +
-        (!personOn() && s.longest_walk_day ? '<span class="sup-tip" tabindex="0" data-tip="' + escapeAttr('The day we covered the most ground between photo spots: straight-line distances between consecutive geotagged shots, counting only hops under 3 km (so drives, boats and flights are skipped). A rough “how far we roamed” estimate from photo GPS — not on-foot miles. For actual walking, see the “walked” tile.') + '">' + dIcon('walk') + ' Longest day <b>' + escapeHtml(s.longest_walk_day.label) + '</b> · ' + distFromKm(s.longest_walk_day.km) + '<span class="t-info" aria-hidden="true">ⓘ</span></span>' : '') +
+        (!personOn() && s.longest_walk_day ? '<span class="sup-tip" tabindex="0" data-tip="' + escapeAttr('The day we covered the most ground between photo spots: straight-line distances between consecutive geotagged shots, counting only hops under 3 km (so drives, boats and flights are skipped). A rough “how far we roamed” estimate from photo GPS — not on-foot miles. For actual walking, see the “walked” tile.') + '">' + dIcon('walk') + ' Longest day <b>' + escapeHtml(s.longest_walk_day.label) + '</b> · ' + distFromKm(s.longest_walk_day.km) + ' between photo spots<span class="t-info" aria-hidden="true">ⓘ</span></span>' : '') +
         '</div>';
     }
     const note = personOn() ?
@@ -4519,7 +4519,8 @@
     // a non-breaking space glues each number to its unit so a unit never orphans
     // onto their own line in the narrow mobile column
     if (h.steps) bits.push('<b>' + fmt(h.steps) + '</b> steps');
-    if (day.walk_km) bits.push('<b>' + distFromKm(day.walk_km) + '</b> traveled');
+    // straight lines between the day's photo spots (not the route driven or walked: that's the watch's "walked")
+    if (day.walk_km) bits.push('<b>' + distFromKm(day.walk_km) + '</b> between photo spots');
     if (h.climb_m) {
       const flights = Math.round(h.climb_m / 3);
       bits.push('climbed <b>' + elevFromM(h.climb_m) + '</b> ≈ ' + flights + ' flights');
@@ -4553,8 +4554,9 @@
     let html = vizTimelineHTML();
     const sc = DATA.signature_climbs || [];
     if (sc.length) {
-      html += '<div class="dcc-tour-climbs"><span class="lab">Compare to</span>' +
-        sc.map(c => '<span class="climb">' + climbIcon(c.name) + ' ' + escapeHtml(c.name) +
+      // the highest altitude the phones recorded at each place (not the landmark's own height)
+      html += '<div class="dcc-tour-climbs"><span class="lab">Highest you reached</span>' +
+        sc.map(c => '<span class="climb" title="The highest point your phones recorded at ' + escapeAttr(c.name) + '">' + climbIcon(c.name) + ' ' + escapeHtml(c.name) +
           ' <b>' + elevFromM(c.max_alt) + '</b></span>').join('') + '</div>';
     }
     html += staircaseHTML();
@@ -4684,7 +4686,7 @@
       t(fmt(flights), 'flights climbed') +
       t(fmt(stairs), 'stairs') +
       t(distNumFromMi(c.walkMi, 1) + ' ' + distUnit(), 'walked (watch)') +
-      t(distNumFromKm(c.travelKm, 0) + ' ' + distUnit(), 'traveled') +
+      t(distNumFromKm(c.travelKm, 0) + ' ' + distUnit(), 'between photo spots') +
       t(fmt(c.places), 'places') +
       t(fmt(c.photos), 'photos') +
       t(fmt(c.videos), 'videos') +
