@@ -373,7 +373,7 @@ body.dcc-tour-resizing { cursor: col-resize; user-select: none; }
 /* ===== Lightbox ===== */
 .dcc-tour-noscroll { overflow: hidden; }
 .dcc-tour-lightbox {
-  position: fixed; inset: 0; background: rgba(12, 11, 10, 0.97);
+  position: fixed; inset: 0; background: #0c0b0a;
   display: none; align-items: center; justify-content: center;
   z-index: 9999; padding: 1rem; touch-action: none;
 }
@@ -382,17 +382,16 @@ body.dcc-tour-resizing { cursor: col-resize; user-select: none; }
   border: 7px solid var(--dcc-tour-surface); background: var(--dcc-tour-surface); box-shadow: 0 12px 44px rgba(0, 0, 0, 0.55); }
 @media (max-width: 800px) { .dcc-tour-lightbox-img { border-width: 5px; } }
 /* one consistent, on-theme control style: frosted dark chip, warm-gold on hover */
-.dcc-tour-lightbox-close, .dcc-tour-lightbox-nav, .lb-act {
+.dcc-tour-lightbox-nav {
   position: fixed; background: rgba(26, 25, 23, 0.55); color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 50%; cursor: pointer;
   display: flex; align-items: center; justify-content: center; text-decoration: none;
   -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
   transition: background 0.15s, border-color 0.15s, transform 0.1s; z-index: 3;
 }
-.dcc-tour-lightbox-close:hover, .dcc-tour-lightbox-nav:hover, .lb-act:hover {
+.dcc-tour-lightbox-nav:hover {
   background: var(--dcc-tour-primary); border-color: var(--dcc-tour-primary); color: #fff;
 }
-.dcc-tour-lightbox-close { top: 12px; right: 12px; width: 44px; height: 44px; }
 .dcc-tour-lightbox-nav { position: absolute; width: 48px; height: 48px; padding: 0; font-size: 0; line-height: 0; }
 .dcc-tour-lightbox-nav svg { display: block; flex: none; }
 .dcc-tour-lightbox-nav.prev { left: 1rem; top: 50%; transform: translateY(-50%); }
@@ -804,22 +803,13 @@ body.dcc-tour-resizing { cursor: col-resize; user-select: none; }
 }
 
 /* ===== quick polish ===== */
-.dcc-tour-lightbox-cap { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(14px + env(safe-area-inset-bottom,0px));
-  text-align: center; color: #fff; font-size: 0.9rem; background: linear-gradient(transparent, rgba(0,0,0,0.6)); pointer-events: none; }
-.dcc-tour-lightbox-count { position: fixed; top: 20px; left: 16px; color: rgba(255,255,255,0.9);
-  font-size: 0.82rem; font-variant-numeric: tabular-nums; pointer-events: none; z-index: 3; }
-/* "See all N shots here" chip inside the viewer caption (map-opened items) */
-.dcc-tour-lb-place { display: block; width: fit-content; margin: 8px auto 0; pointer-events: auto; cursor: pointer;
-  font: inherit; font-size: 0.82rem; font-weight: 600; color: #fff;
-  background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.5); border-radius: 999px; padding: 5px 13px; }
-.dcc-tour-lb-place:hover { background: rgba(255,255,255,0.28); }
 
 /* tactile feedback on tap/press */
 .dcc-tour-modebtn:active, .dcc-tour-tabbtn:active, .dcc-tour-chip:active, .dcc-tour-daychip:active,
 .tb-arrow:active, .sheet-day:active, .dcc-tour-legchip:active { transform: scale(0.97); }
 .dcc-tour-modebtn, .dcc-tour-tabbtn, .dcc-tour-chip, .dcc-tour-daychip, .tb-arrow,
 .sheet-day { transition: transform 0.08s ease, border-color 0.15s, background 0.15s, color 0.15s; }
-.lb-act:active, .tb-rand:active { transform: scale(0.95); }
+.tb-rand:active, .vt-b:active i { transform: scale(0.95); }
 
 /* gentle fade-in when a day loads */
 @keyframes dcc-fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -1287,14 +1277,12 @@ html:not(.dcc-matrix-on) .dcc-tour-history { --dcc-tour-muted: #6d6964; }
   opacity: 0; pointer-events: none; transition: opacity 0.18s, transform 0.18s; max-width: 86vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dcc-tour-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 /* download + share sit in a clean row just left of the close button (no overlap) */
-.dcc-tour-lightbox-actions { position: fixed; top: 12px; right: 68px; display: flex; gap: 10px; z-index: 3; }
-.dcc-tour-lightbox-actions .lb-act { position: static; width: 44px; height: 44px; }
 /* video / clip viewer: play the footage large so the native controls have room and
    the frame is actually visible (they auto-hide during playback; tap to bring back).
    The stage is a fixed box (room left for the close button + caption); the player
    fills it with object-fit:contain so ANY aspect — our portrait phone clips or a
    landscape GoPro — shows whole, never cropped, regardless of when metadata loads. */
-.dcc-tour-vstage { position: fixed; top: 64px; left: 8px; right: 8px; bottom: 60px;
+.dcc-tour-vstage { position: fixed; top: var(--vtop, 72px); left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   display: flex; align-items: center; justify-content: center; }
 .dcc-tour-vplayer { width: 100%; height: 100%; object-fit: contain; background: transparent; }
 .dcc-tour-vplayer-iframe { width: 100%; max-width: calc((100vh - 124px) * 16 / 9); aspect-ratio: 16 / 9; max-height: 100%; border: 0; background: #000; }
@@ -1655,8 +1643,6 @@ html.dcc-matrix-on .dcc-tour-history .bh-pop a { color: #7d5411; }
 .dcc-tour-histlink:hover span { text-decoration: underline; }
 .dcc-tour-place-htext .dcc-tour-histlink { display: flex; width: fit-content; margin: 2px 0 0; }
 .dcc-tour-mm-side .dcc-tour-histlink { display: flex; width: fit-content; margin: 4px 0 2px; clear: both; }
-.dcc-tour-lb-hist { display: flex; align-items: center; gap: 6px; }
-.dcc-tour-lb-hist .dcc-ic { width: 15px; height: 15px; flex: none; }
 /* the History tab's place view */
 .dcc-hist-place { position: relative; margin: 10px 0 14px; padding: 14px 16px 12px; border: 1px solid var(--dcc-tour-border); border-left: 3px solid var(--dcc-tour-primary);
   border-radius: var(--dcc-tour-radius); background: var(--dcc-tour-card-bg); box-shadow: var(--dcc-tour-shadow); }
@@ -1747,9 +1733,6 @@ html.dcc-matrix-on .leaflet-bar a.leaflet-disabled { color: #3c7a44; }
 .dcc-tour-dayhist .dcc-ic { width: 15px; height: 15px; flex: none; margin-top: 1px; }
 .dcc-tour-dayhist b { font-family: var(--dcc-tour-font-head); font-weight: 600; }
 .dcc-tour-dayhist:hover span { text-decoration: underline; }
-.dcc-tour-lb-row { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px; pointer-events: none; }
-.dcc-tour-lb-row .dcc-tour-lb-place { margin: 0; }
-.dcc-tour-lb-then[aria-pressed="true"] { background: rgba(242, 194, 48, 0.32); border-color: #f2c230; box-shadow: inset 0 0 0 1px #f2c230; }
 .dcc-vthen { position: absolute; z-index: 2; cursor: ew-resize; touch-action: none; user-select: none; -webkit-user-select: none; }
 .dcc-vthen-tint { position: absolute; inset: 0; pointer-events: none;
   -webkit-backdrop-filter: sepia(0.85) saturate(0.8) contrast(1.05); backdrop-filter: sepia(0.85) saturate(0.8) contrast(1.05);
@@ -1778,7 +1761,6 @@ html.dcc-matrix-on .leaflet-bar a.leaflet-disabled { color: #3c7a44; }
 .dcc-then-cross:focus-visible { outline: none; }
 .dcc-then-cross:focus-visible i { outline: 2px solid var(--dcc-tour-primary); outline-offset: 2px; }
 html.dcc-matrix-on .dcc-vthen-chip { background: rgba(2, 14, 4, 0.94); }
-html.dcc-matrix-on .dcc-tour-lb-then[aria-pressed="true"] { background: rgba(0, 255, 65, 0.18); border-color: currentColor; }
 /* Leaflet's zoom buttons are 30px: give them 44px touch areas without moving them */
 .leaflet-bar a { position: relative; }
 .leaflet-bar a::after { content: ""; position: absolute; inset: -7px; }
@@ -2040,14 +2022,6 @@ html.dcc-matrix-on .dcc-hp-siege .dcc-hist-note-k { color: #ff6b5e; }
 .dcc-pinbtn:focus-visible { outline: 2px solid var(--dcc-tour-primary, #b68235); outline-offset: 2px; }
 /* phones' Media grid: the play button has the bottom-right corner, so the pin takes the bottom-left */
 @media (max-width: 800px) { .dcc-tour-root.dcc-tour-root .dcc-tour-gallery .dcc-tour-gal-grid .dcc-pinbtn.cell { width: 15px; height: 15px; right: auto; left: 7px; bottom: 7px; } }
-/* in the viewer: the coordinates beside a large pin */
-.dcc-tour-lb-pin { pointer-events: auto; display: flex; align-items: center; gap: 10px; margin: 10px auto 0; padding: 7px 14px 7px 7px; max-width: 100%;
-  border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; background: rgba(255,255,255,0.08); color: #eee; cursor: pointer; font: inherit; text-align: left; }
-.dcc-tour-lb-pin .lbp-ic { width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #b68235; }
-.dcc-tour-lb-pin .lbp-ic .dcc-di { width: 19px; height: 19px; color: #fff; }
-.dcc-tour-lb-pin .lbp-t { display: grid; line-height: 1.25; }
-.dcc-tour-lb-pin .lbp-t b { font-size: 0.86rem; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; color: #fff; }
-.dcc-tour-lb-pin .lbp-t span { font-size: 0.74rem; color: #c9c4bb; }
 /* the maps menu: a full-width sheet flush with the bottom edge */
 .dcc-pinsheet { position: fixed; inset: 0; z-index: 10001; }
 .dcc-pinsheet[hidden] { display: none; }
@@ -2131,3 +2105,75 @@ html.dcc-matrix-on .mm-fan-h b { color: #bdffc6; }
 .dcc-hp-you-ref span { position: absolute; left: 18px; top: -3px; white-space: nowrap; padding: 1px 6px; border-radius: 4px; background: rgba(255,255,255,0.92); color: #201f1d;
   font: 600 11px/1.5 Lora, Georgia, serif; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
 .dcc-hp-you-ref.left span { left: auto; right: 18px; }
+
+/* ===== the viewer's top bar: where and when, and every button, above the media (never on it) ===== */
+.dcc-tour-vtop { position: fixed; top: 0; left: 0; right: 0; z-index: 4; display: flex; align-items: center; gap: 6px 12px;
+  padding: calc(8px + env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px));
+  background: #161513; border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: #fff; }
+.dcc-tour-vtop .vt-tx { flex: 1; min-width: 0; display: grid; line-height: 1.3; }
+.dcc-tour-vtop .vt-place { font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dcc-tour-vtop .vt-meta { font-size: 0.8rem; color: #c9c4bb; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dcc-tour-vtop .vt-acts, .dcc-tour-vtop .vt-ctx { display: flex; align-items: flex-start; gap: 4px; }
+.dcc-tour-vtop .vt-sep { width: 1px; align-self: stretch; margin: 4px 4px 14px; background: rgba(255, 255, 255, 0.15); }
+.dcc-tour-vtop .vt-ctx:empty + .vt-sep { display: none; }
+.dcc-tour-root .dcc-tour-vtop .vt-b, .dcc-tour-vtop .vt-b { position: static; display: grid; justify-items: center; gap: 3px; min-width: 52px; width: auto; height: auto; padding: 0;
+  border: 0; border-radius: 0; background: none; color: #fff; font: inherit; font-size: 0.68rem; line-height: 1.1; text-decoration: none; cursor: pointer;
+  -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+.dcc-tour-vtop .vt-b i { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.08); transition: background 0.15s, border-color 0.15s, transform 0.1s; }
+.dcc-tour-vtop .vt-b i svg { width: 18px; height: 18px; display: block; }
+.dcc-tour-vtop .vt-b i .dcc-ic, .dcc-tour-vtop .vt-b i .dcc-di { width: 18px; height: 18px; color: inherit; }
+.dcc-tour-vtop .vt-b:hover i { background: var(--dcc-tour-primary, #b68235); border-color: var(--dcc-tour-primary, #b68235); }
+.dcc-tour-vtop .vt-gold i { background: #b68235; border-color: #b68235; }
+.dcc-tour-vtop .dcc-tour-lb-then[aria-pressed="true"] i { background: rgba(242, 194, 48, 0.32); border-color: #f2c230; box-shadow: inset 0 0 0 1px #f2c230; }
+.dcc-tour-vtop .vt-b:focus-visible { outline: none; }
+.dcc-tour-vtop .vt-b:focus-visible i { outline: 2px solid #f2c230; outline-offset: 2px; }
+/* phones: the details on one line across the top, the buttons evenly spread beneath */
+@media (max-width: 800px) {
+  .dcc-tour-vtop { flex-wrap: wrap; padding-left: max(12px, env(safe-area-inset-left, 0px)); }
+  .dcc-tour-vtop .vt-tx { flex-basis: 100%; padding: 0 2px; }
+  .dcc-tour-vtop .vt-acts { flex: 1; justify-content: space-between; }
+  .dcc-tour-vtop .vt-ctx { display: contents; }
+  .dcc-tour-vtop .vt-sep { display: none; }
+  .dcc-tour-vtop .vt-b { min-width: 0; flex: 1; }
+}
+html.dcc-matrix-on .dcc-tour-vtop { background: #021004; border-color: rgba(0, 255, 70, 0.3); color: #bdffc6; }
+html.dcc-matrix-on .dcc-tour-vtop .vt-b { color: #bdffc6; }
+html.dcc-matrix-on .dcc-tour-vtop .vt-b i { border-color: rgba(0, 255, 70, 0.4); background: rgba(0, 255, 70, 0.06); }
+html.dcc-matrix-on .dcc-tour-vtop .vt-gold i, html.dcc-matrix-on .dcc-tour-vtop .dcc-tour-lb-then[aria-pressed="true"] i { background: rgba(0, 255, 65, 0.22); border-color: #46e05a; }
+html.dcc-matrix-on .dcc-tour-vtop .vt-meta { color: #46e05a; }
+/* a dialog that takes focus itself (after a tap or click) shows no ring */
+#dcc-tour-viewer:focus, .dcc-pinsheet .ps-panel:focus { outline: none; }
+/* drawn icons sit dead centre in whatever button holds them */
+.dc-arrow, .dcc-then-more, .dcc-then-x2, .dcc-then-row [data-a="prev"], .dcc-then-row [data-a="next"], #mm-fs, .dcc-vthen-chip button { line-height: 0; padding: 0; }
+svg.dcc-dr { display: block; flex: none; margin: auto; }
+/* several crossings on one spot: one mark with a count; the popup lists each day */
+.dcc-then-cross .dcc-then-crossn { position: absolute; left: 6px; top: -22px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border-radius: 9px;
+  background: var(--dcc-tour-accent-deep, #7d5411); color: #fff; font: 700 11px/18px var(--dcc-tour-font, Lora, Georgia, serif); text-align: center; box-shadow: 0 0 0 2px #fff; pointer-events: none; }
+.dcc-then-pop-many hr { border: 0; border-top: 1px solid var(--dcc-tour-border); margin: 8px 0; }
+.dcc-then-pop-many { max-height: 260px; overflow-y: auto; }
+
+/* ===== computers: solid sticky bars; the day strip stops below the tabs; what sticks below them starts below them ===== */
+@media (min-width: 801px) {
+  .dcc-tour-modes { background: var(--dcc-tour-bg); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: 0 1px 0 var(--dcc-tour-border); }
+  .dcc-tour-daynav { top: var(--dcc-modes-h, 56px); background: var(--dcc-tour-bg); -webkit-backdrop-filter: none; backdrop-filter: none;
+    box-shadow: 0 1px 0 var(--dcc-tour-border), 0 8px 14px -12px rgba(0, 0, 0, 0.35); }
+  .dcc-tour-gal-bar { top: var(--dcc-modes-h, 56px); }
+  .dcc-story { top: calc(var(--dcc-modes-h, 56px) + 8px); }
+  .dcc-tour-mapwrap, .dcc-tour-divider { top: calc(var(--dcc-modes-h, 56px) + var(--dcc-daynav-h, 0px) + 10px); }
+  .dcc-tour-map, .dcc-tour-divider { height: min(80vh, calc(100vh - var(--dcc-modes-h, 56px) - var(--dcc-daynav-h, 0px) - 24px)); }
+  .dcc-tour-story { max-height: min(80vh, calc(100vh - var(--dcc-modes-h, 56px) - var(--dcc-daynav-h, 0px) - 24px)); }
+  /* the strip's ends: a fade and an arrow wherever there are more days to scroll to */
+  .dn-edge { position: sticky; z-index: 2; flex: 0 0 0; width: 0; align-self: stretch; pointer-events: none; }
+  .dn-l { left: 0; margin-right: -6px; } .dn-r { right: 0; margin-left: -6px; }
+  .dn-edge::before { content: ""; position: absolute; top: -0.75rem; bottom: -0.75rem; width: 110px; }
+  .dn-l::before { left: -1.5rem; background: linear-gradient(90deg, var(--dcc-tour-bg) 35%, transparent); }
+  .dn-r::before { right: -1.5rem; background: linear-gradient(270deg, var(--dcc-tour-bg) 35%, transparent); }
+  .dn-edge button { position: absolute; top: 50%; width: 36px; height: 36px; margin-top: -18px; padding: 0; display: grid; place-items: center; border-radius: 50%; cursor: pointer;
+    pointer-events: auto; background: var(--dcc-tour-card-bg); border: 1px solid var(--dcc-tour-border); color: var(--dcc-tour-accent-deep); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); }
+  .dn-edge button:hover { border-color: var(--dcc-tour-primary); }
+  .dn-l button { left: -0.75rem; } .dn-r button { right: -0.75rem; }
+  .dcc-tour-daynav:not(.dn-more-l) .dn-l, .dcc-tour-daynav:not(.dn-more-r) .dn-r { visibility: hidden; }
+}
+@media (max-width: 800px) { .dn-edge { display: none; } }
+html.dcc-matrix-on .dn-edge button { background: #021004; color: #46e05a; border-color: rgba(0, 255, 70, 0.4); }

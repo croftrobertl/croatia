@@ -20,6 +20,9 @@
 
   // ---- units (task 8): default Imperial; a header toggle flips distance,
   //      elevation and temperature everywhere, live ----
+  // drawn icons for arrows and buttons (typed characters like ‹ › ▴ × ⛶ sit off-centre and vary by font)
+  const DRAWN = { l: 'M15.5 5 8.5 12l7 7', r: 'm8.5 5 7 7-7 7', u: 'M5 15.5 12 8.5l7 7', d: 'M5 8.5 12 15.5l7-7', x: 'M6 6l12 12M18 6 6 18', fs: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5' };
+  const drawn = (k, size) => '<svg class="dcc-dr" viewBox="0 0 24 24" width="' + (size || 18) + '" height="' + (size || 18) + '" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + DRAWN[k] + '"/></svg>';
   let unitSys = 'imperial';                 // 'imperial' | 'metric'
   const imp = () => unitSys === 'imperial';
   // distance is stored in the data two ways: km (walk_km / trip_walk_km) and mi
@@ -224,6 +227,21 @@
       b.addEventListener('click', () => { setView('story'); selectDay(i); });
       nav.appendChild(b);
     });
+    // computers: a soft fade and an arrow at whichever end of the day strip has more days
+    const edge = (side, dir) => { const e = el('span', 'dn-edge dn-' + side, '<button type="button" tabindex="-1" aria-hidden="true">' + drawn(side, 18) + '</button>');
+      e.firstChild.addEventListener('click', () => nav.scrollBy({ left: dir * nav.clientWidth * 0.8, behavior: scrollBehavior() })); return e; };
+    nav.prepend(edge('l', -1)); nav.appendChild(edge('r', 1));
+    const navEdges = () => { const max = nav.scrollWidth - nav.clientWidth; nav.classList.toggle('dn-more-l', nav.scrollLeft > 4); nav.classList.toggle('dn-more-r', nav.scrollLeft < max - 4); };
+    nav.addEventListener('scroll', navEdges, { passive: true }); window.addEventListener('resize', navEdges);
+    // the sticky tab bar and day strip report their heights, so whatever sticks below them starts below them
+    if ('ResizeObserver' in window) setTimeout(() => {
+      const modes = root.querySelector('.dcc-tour-modes');
+      const ro = new ResizeObserver(() => {
+        root.style.setProperty('--dcc-modes-h', (modes ? modes.offsetHeight : 0) + 'px');
+        root.style.setProperty('--dcc-daynav-h', nav.offsetHeight + 'px'); navEdges();
+      });
+      if (modes) ro.observe(modes); ro.observe(nav);
+    }, 0);
     const body = el('div', 'dcc-tour-body');
     const story = el('section', 'dcc-tour-story');
     story.setAttribute('aria-live', 'polite');
@@ -2231,7 +2249,7 @@
     if (!im) return;
     const ov = el('div', 'dcc-vthen');
     ov.innerHTML = '<div class="dcc-vthen-tint"></div><div class="dcc-vthen-bar" role="slider" tabindex="0" aria-label="Then and now divider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50"><i></i></div>' +
-      '<div class="dcc-vthen-chip"><button type="button" data-d="-1" aria-label="Earlier era">‹</button><span>…</span><button type="button" data-d="1" aria-label="Later era">›</button></div>';
+      '<div class="dcc-vthen-chip"><button type="button" data-d="-1" aria-label="Earlier era">' + drawn('l', 14) + '</button><span>…</span><button type="button" data-d="1" aria-label="Later era">' + drawn('r', 14) + '</button></div>';
     stage.appendChild(ov);
     let split = 0.5;
     const place = () => {
@@ -2526,7 +2544,7 @@
       '<div class="dcc-tour-mm-divider" aria-hidden="true"></div>' +      // task 10: separate controls from map/legend
       '<div class="dcc-tour-mm-legend" id="mm-legend"></div>' +          // task 8: legend above the map
       '<div class="dcc-tour-mm-wrap"><div class="dcc-tour-mm-map" id="dcc-mm-map"></div>' +
-        '<button class="dcc-tour-mm-fs" id="mm-fs" type="button" title="Full screen" aria-label="Full screen">⛶</button>' +
+        '<button class="dcc-tour-mm-fs" id="mm-fs" type="button" title="Full screen" aria-label="Full screen">' + drawn('fs') + '</button>' +
         thenMarkup() +
         '<figure class="dcc-tour-mm-moment" id="mm-moment" hidden></figure>' +
         '<aside class="dcc-tour-mm-side" id="dcc-mm-side" hidden></aside>' +
@@ -3067,17 +3085,38 @@
     if (k === 'bih') return { t: thenInlandName(f) || 'inland' };
     return thenPartStatus(k, f);
   }
+  // Crossings that land on the same spot (within a fingertip at this zoom) share one mark with a count, and
+  // the marks sit just under the photo bubbles so they never hide a number. Regrouped on every zoom.
+  let thenCrossG = null, thenCrossF = null;
   function thenDrawCrossings(f) {
+    if (!mmMap.getPane('dccThenCross')) mmMap.createPane('dccThenCross').style.zIndex = 590;   // the trip's pins are 600
+    thenCrossF = f; thenCrossG = L.layerGroup(); thenNear.addLayer(thenCrossG);
+    thenDrawCrossGroups();
+  }
+  function thenDrawCrossGroups() {
+    if (!thenCrossG || !thenCrossF || !mmMap) return;
+    const f = thenCrossF, groups = [];
+    thenCrossG.clearLayers();
     thenCrossings().forEach(x => {
-      const a = crossStatus(x.from, f), b = crossStatus(x.to, f), d = DATA.days[x.di];
-      const same = a.t === b.t;
-      const html = '<div class="dcc-then-pop"><small>' + (d ? escapeHtml(dWeekday(d) + ', ' + dDate(d)) : '') + '</small>' +
-        '<b>You crossed into ' + escapeHtml(crossName(x.to)) + '</b>' +
-        '<p>From ' + escapeHtml(crossName(x.from)) + '. In ' + escapeHtml(f.label) + ': ' + escapeHtml(crossName(x.from)) + ' — ' + escapeHtml(a.t) + '; ' +
-          escapeHtml(crossName(x.to)) + ' — ' + escapeHtml(b.t) + '. ' + (same ? 'Then, one ruler on both sides.' : 'Then, a real border.') + '</p></div>';
-      thenNear.addLayer(L.marker(x.ll, { pane: 'dccThenTop', keyboard: true, title: (DATA.days[x.di] ? dDate(DATA.days[x.di]) + ': ' : '') + 'crossed into ' + crossName(x.to),
-        icon: L.divIcon({ className: 'dcc-then-cross' + (same ? '' : ' dcc-then-cross-real'), html: '<i aria-hidden="true">⇄</i>', iconSize: null }) })
-        .bindPopup(html, { className: 'dcc-then-popup', maxWidth: 260, autoPanPaddingTopLeft: L.point(60, 60), autoPanPaddingBottomRight: L.point(20, 210) }));
+      const pt = mmMap.latLngToLayerPoint(x.ll), g = groups.find(q => q.pt.distanceTo(pt) < 28);
+      if (g) g.xs.push(x); else groups.push({ pt, ll: x.ll, xs: [x] });
+    });
+    groups.forEach(g => {
+      let real = false;
+      const rows = g.xs.map(x => {
+        const a = crossStatus(x.from, f), b = crossStatus(x.to, f), d = DATA.days[x.di], same = a.t === b.t;
+        if (!same) real = true;
+        return '<small>' + (d ? escapeHtml(dWeekday(d) + ', ' + dDate(d)) : '') + '</small>' +
+          '<b>You crossed into ' + escapeHtml(crossName(x.to)) + '</b>' +
+          '<p>From ' + escapeHtml(crossName(x.from)) + '. In ' + escapeHtml(f.label) + ': ' + escapeHtml(crossName(x.from)) + ' — ' + escapeHtml(a.t) + '; ' +
+            escapeHtml(crossName(x.to)) + ' — ' + escapeHtml(b.t) + '. ' + (same ? 'Then, one ruler on both sides.' : 'Then, a real border.') + '</p>';
+      });
+      const title = g.xs.map(x => (DATA.days[x.di] ? dDate(DATA.days[x.di]) + ': ' : '') + 'crossed into ' + crossName(x.to)).join('; ');
+      const n = g.xs.length;
+      thenCrossG.addLayer(L.marker(g.ll, { pane: 'dccThenCross', keyboard: true, title,
+        icon: L.divIcon({ className: 'dcc-then-cross' + (real ? ' dcc-then-cross-real' : ''), html: '<i aria-hidden="true">⇄</i>' + (n > 1 ? '<b class="dcc-then-crossn">' + n + '</b>' : ''), iconSize: null }) })
+        .bindPopup('<div class="dcc-then-pop' + (n > 1 ? ' dcc-then-pop-many' : '') + '">' + rows.join('<hr>') + '</div>',
+          { className: 'dcc-then-popup', maxWidth: 260, autoPanPaddingTopLeft: L.point(60, 60), autoPanPaddingBottomRight: L.point(20, 210) }));
     });
   }
 
@@ -3203,7 +3242,7 @@
     mmMap.on('dragstart', () => wallStop());
     // phones: the bar starts compact (year and controls); ▴ or a swipe up shows the details
     const bar = ui.querySelector('.dcc-then-bar'), more = ui.querySelector('[data-a=more]');
-    const setOpen = on => { bar.classList.toggle('dcc-then-open', on); more.setAttribute('aria-expanded', on ? 'true' : 'false'); more.textContent = on ? '▾' : '▴'; more.setAttribute('aria-label', on ? 'Hide this era’s details' : 'Show this era’s details'); };
+    const setOpen = on => { bar.classList.toggle('dcc-then-open', on); more.setAttribute('aria-expanded', on ? 'true' : 'false'); more.innerHTML = drawn(on ? 'd' : 'u', 16); more.setAttribute('aria-label', on ? 'Hide this era’s details' : 'Show this era’s details'); };
     more.addEventListener('click', () => setOpen(!bar.classList.contains('dcc-then-open')));
     let y0 = null;
     bar.addEventListener('touchstart', e => { y0 = e.touches.length === 1 && !e.target.closest('input') ? e.touches[0].clientY : null; }, { passive: true });
@@ -3224,7 +3263,7 @@
       const d = e.key === 'ArrowLeft' ? -0.05 : e.key === 'ArrowRight' ? 0.05 : 0;
       if (d) { e.preventDefault(); thenCmp = Math.min(0.96, Math.max(0.04, thenCmp + d)); thenClip(); }
     });
-    mmMap.on('zoomend', () => { if (thenOn) { thenZoomClass(); thenDrawTop(); thenHere(); thenLabelTidy(); } });
+    mmMap.on('zoomend', () => { if (thenOn) { thenZoomClass(); thenDrawTop(); thenHere(); thenLabelTidy(); thenDrawCrossGroups(); } });
     if (window.matchMedia) {
       const mq = matchMedia('(max-width: 800px)'), redraw = () => { if (thenOn && thenIdx >= 0) { const i = thenIdx; thenIdx = -1; thenShow(i); } };
       if (mq.addEventListener) mq.addEventListener('change', redraw); else if (mq.addListener) mq.addListener(redraw);
@@ -3452,7 +3491,7 @@
     ui.hidden = !txt;
   }
   function thenClip() {
-    const panes = ['dccThenWide', 'dccThenBih', 'dccThen', 'dccThenTop'].map(n => mmMap.getPane(n));
+    const panes = ['dccThenWide', 'dccThenBih', 'dccThen', 'dccThenTop', 'dccThenCross'].map(n => mmMap.getPane(n)).filter(Boolean);
     const sw = root._mapmode.querySelector('.dcc-then-swipe');
     if (!thenCmpOn) { panes.forEach(p => { p.style.clipPath = ''; }); sw.hidden = true; return; }
     const size = mmMap.getSize(), x = Math.round(size.x * thenCmp);
@@ -3526,13 +3565,13 @@
         '<div class="dcc-then-swipe" role="slider" tabindex="0" aria-label="Then and now divider" aria-valuemin="0" aria-valuemax="100" hidden><span>Then</span><i></i><span>Now</span></div>' +
         '<div class="dcc-then-bar" role="group" aria-label="Era">' +
           '<div class="dcc-then-k" aria-live="polite"><b class="dcc-then-yr"></b><span class="dcc-then-t"></span>' +
-            '<button type="button" class="dcc-then-more" data-a="more" aria-expanded="false" aria-label="Show this era’s details" title="More">▴</button>' +
-            '<button type="button" class="dcc-then-x2" data-a="close" aria-label="Close the old borders" title="Close">×</button></div>' +
+            '<button type="button" class="dcc-then-more" data-a="more" aria-expanded="false" aria-label="Show this era’s details" title="More">' + drawn('u', 16) + '</button>' +
+            '<button type="button" class="dcc-then-x2" data-a="close" aria-label="Close the old borders" title="Close">' + drawn('x', 16) + '</button></div>' +
           '<div class="dcc-then-row">' +
             '<button type="button" data-a="play" aria-label="Play through the eras" title="Play through the eras">' + PLAY_GLYPH + '</button>' +
-            '<button type="button" data-a="prev" aria-label="Earlier era" title="Earlier era">‹</button>' +
+            '<button type="button" data-a="prev" aria-label="Earlier era" title="Earlier era">' + drawn('l') + '</button>' +
             '<input type="range" class="dcc-then-rng" min="0" max="0" value="0" step="1" aria-label="Era">' +
-            '<button type="button" data-a="next" aria-label="Later era" title="Later era">›</button>' +
+            '<button type="button" data-a="next" aria-label="Later era" title="Later era">' + drawn('r') + '</button>' +
           '</div>' +
           '<p class="dcc-then-s"></p>' +
           '<div class="dcc-then-row2">' +
@@ -4056,9 +4095,10 @@
         secs.forEach(s => setAcc(s, open));
         g.querySelector('#dcc-galexpand').textContent = open ? 'Collapse all' : 'Expand all';
       });
-      if ('IntersectionObserver' in window)
-        new IntersectionObserver(en => { if (en[0].isIntersecting) renderGalleryChunk(); })
-          .observe(g.querySelector('#dcc-galmore'));
+      if ('IntersectionObserver' in window) {
+        galIO = new IntersectionObserver(en => { if (en[0].isIntersecting) renderGalleryChunk(); });
+        galIO.observe(g.querySelector('#dcc-galmore'));
+      }
     }
     renderGallery();
   }
@@ -4099,8 +4139,13 @@
     }
     grid.insertAdjacentHTML('beforeend', html);
     galRendered = end;
-    document.getElementById('dcc-galmore').style.display = galRendered < galCur.length ? '' : 'none';
+    const more = document.getElementById('dcc-galmore');
+    more.style.display = galRendered < galCur.length ? '' : 'none';
+    // look again after every batch: the observer only reports changes, so a fast scroll that brings
+    // "loading more…" straight back into view would otherwise leave it there with nothing loading
+    if (galIO && galRendered < galCur.length) { galIO.unobserve(more); galIO.observe(more); }
   }
+  let galIO = null;
   // grouped view: collapsible accordion sections, items rendered lazily on first open
   function renderGalleryGrouped(grid) {
     const groups = []; let cur = null;
@@ -4207,6 +4252,17 @@
       'onclick="event.stopPropagation()">' + dIcon('pin') + '</a>';
   }
 
+  // Opening a dialog moves focus into it. A keyboard user lands on its first button, ring and all;
+  // after a tap or click the dialog itself takes focus, so no ring flashes on a button nobody chose.
+  let lastInputKeyboard = false;
+  document.addEventListener('keydown', e => { if (!e.metaKey && !e.ctrlKey && !e.altKey) lastInputKeyboard = true; }, true);
+  document.addEventListener('pointerdown', () => { lastInputKeyboard = false; }, true);
+  function focusInto(box, first) {
+    if (lastInputKeyboard && first) { first.focus({ preventScroll: true }); return; }
+    if (!box.hasAttribute('tabindex')) box.setAttribute('tabindex', '-1');
+    box.focus({ preventScroll: true });
+  }
+
   // ---- Timeline: how far, and which way, from one place to the next ----
   const _COMPASS = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'];
   function legHTML(a, b) {
@@ -4286,7 +4342,7 @@
     if (m.newTab) open.target = '_blank'; else open.removeAttribute('target');
     pinBack = from || null;
     pinSheet.hidden = false;
-    pinSheet.querySelector('.ps-open').focus({ preventScroll: true });
+    focusInto(pinSheet.querySelector('.ps-panel'), pinSheet.querySelector('.ps-open'));
   }
   // a pin tap opens the menu and nothing else (not the photo viewer under it)
   document.addEventListener('click', e => {
@@ -4322,32 +4378,35 @@
     }
     return '';
   }
-  // media stats for the active photographer (recomputed from the filtered items)
-  function personMediaStats() {
-    let photos = 0, videos = 0, clips = 0, locs = 0, best = { count: -1 }, bestDay = { count: -1 };
-    DATA.days.forEach(d => {
+  // the trip's media numbers, counted live from the trip (or the chosen photographer's shots): places are
+  // distinct place names, "most captured" adds a place up across every day, keepsakes (nonstat) stay out
+  function liveMediaStats() {
+    let photos = 0, videos = 0, clips = 0, bestDay = { count: -1 };
+    const names = new Map();
+    DATA.days.forEach((d, di) => {
       let dc = 0;
       d.places.forEach(p => {
         const its = placeItems(p).filter(it => !it.nonstat); if (!its.length) return;
-        locs++;
+        names.set(p.name, (names.get(p.name) || 0) + its.length);
         its.forEach(it => { if (it.kind === 'photo') photos++; else if (it.kind === 'video') videos++; else clips++; });
-        if (its.length > best.count) best = { name: p.name, count: its.length };
         dc += its.length;
       });
-      if (dc > bestDay.count) bestDay = { label: d.label, count: dc };
+      if (dc > bestDay.count) bestDay = { index: di + 1, label: d.label, count: dc };
     });
-    return { photos, videos, clips, locs, best, bestDay };
+    let best = { count: -1 };
+    names.forEach((count, name) => { if (count > best.count) best = { name, count }; });
+    return { photos, videos, clips, locs: names.size, best, bestDay };
   }
   function tripStatsHTML() {
     const h = DATA.health; if (!h) return '';
     const s = DATA.stats || {};
     const srd = (h.climb_m / 412).toFixed(1);       // Mount Srđ = 412 m
-    // per-photographer media stats override the baked-in trip totals when filtered
-    const ps = personOn() ? personMediaStats() : null;
-    const photos = ps ? ps.photos : s.photos, videos = ps ? ps.videos : s.videos, clips = ps ? ps.clips : s.clips;
-    const totalLoc = ps ? ps.locs : s.total_locations;
-    const busiest = ps ? ps.bestDay : s.most_active_day;
-    const captured = ps ? ps.best : s.most_visited;
+    // counted live, so Stats always agrees with the trip as it is now (and with the photographer filter)
+    const ps = liveMediaStats();
+    const photos = ps.photos, videos = ps.videos, clips = ps.clips;
+    const totalLoc = ps.locs;
+    const busiest = ps.bestDay;
+    const captured = ps.best;
     let sup = '';
     if (busiest && busiest.count > 0) {
       sup = '<div class="dcc-tour-superlatives">' +
@@ -4867,8 +4926,8 @@
     let html = '<div class="dcc-tour-daycover">' +
       (cvr ? '<img class="dc-img" src="' + escapeAttr(cvr) + '" alt="" decoding="async">' : '') +
       '<div class="dc-shade" aria-hidden="true"></div>' +
-      '<button type="button" class="dc-arrow dc-prev" aria-label="Previous day"' + (curDay <= 0 ? ' disabled' : '') + '>‹</button>' +
-      '<button type="button" class="dc-arrow dc-next" aria-label="Next day"' + (curDay >= DATA.day_count - 1 ? ' disabled' : '') + '>›</button>' +
+      '<button type="button" class="dc-arrow dc-prev" aria-label="Previous day"' + (curDay <= 0 ? ' disabled' : '') + '>' + drawn('l', 22) + '</button>' +
+      '<button type="button" class="dc-arrow dc-next" aria-label="Next day"' + (curDay >= DATA.day_count - 1 ? ' disabled' : '') + '>' + drawn('r', 22) + '</button>' +
       '<div class="dc-text">' +
         (day.area ? '<span class="dc-area">' + escapeHtml(day.area) + '</span>' : '') +
         '<button type="button" class="dc-date" aria-haspopup="dialog" aria-label="Pick a day: ' + escapeAttr(dWeekday(day) + ' ' + dDate(day)) + '">' +
@@ -5165,6 +5224,9 @@
   // high and to one side, by however the font placed them)
   const ICON_CHEV_L = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.5 5 8.5 12l7 7"/></svg>';
   const ICON_CHEV_R = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8.5 5 7 7-7 7"/></svg>';
+  const ICON_GRID = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>';
+  // Then: a photo split down the middle, old on one side
+  const ICON_THEN = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M12 3v18"/><path d="M6 15l2.5-3 2 2" opacity=".6"/></svg>';
   function ensureViewerEl() {
     let el = document.getElementById('dcc-tour-viewer');
     if (el) return el;
@@ -5173,15 +5235,18 @@
     el.className = 'dcc-tour-lightbox';
     el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Media viewer');
     el.innerHTML =
-      '<button class="dcc-tour-lightbox-close" aria-label="Close">' + ICON_CLOSE + '</button>' +
-      '<div class="dcc-tour-lightbox-count" aria-hidden="true"></div>' +
-      '<div class="dcc-tour-lightbox-actions">' +
-        '<a class="lb-act" id="dcc-v-dl" download aria-label="Download" title="Download">' + ICON_DL + '</a>' +
-        '<button class="lb-act" id="dcc-v-share" aria-label="Share" title="Share">' + ICON_SHARE + '</button></div>' +
+      // one bar along the top holds the photo's details and every button, so nothing sits on the photo,
+      // the video or its progress bar (the bottom of the screen belongs to the media)
+      '<div class="dcc-tour-vtop">' +
+        '<div class="vt-tx"><b class="vt-place"></b><span class="vt-meta"><span class="dcc-tour-lightbox-count"></span><span class="vt-when"></span></span></div>' +
+        '<div class="vt-acts"><span class="vt-ctx"></span><span class="vt-sep" aria-hidden="true"></span>' +
+          '<a class="vt-b" id="dcc-v-dl" download aria-label="Download" title="Download"><i>' + ICON_DL + '</i><span>Save</span></a>' +
+          '<button type="button" class="vt-b" id="dcc-v-share" aria-label="Share" title="Share"><i>' + ICON_SHARE + '</i><span>Share</span></button>' +
+          '<button type="button" class="vt-b dcc-tour-lightbox-close" aria-label="Close" title="Close"><i>' + ICON_CLOSE + '</i><span>Close</span></button></div>' +
+      '</div>' +
       '<button class="dcc-tour-lightbox-nav prev" aria-label="Previous">' + ICON_CHEV_L + '</button>' +
       '<div class="dcc-tour-vstage"></div>' +
-      '<button class="dcc-tour-lightbox-nav next" aria-label="Next">' + ICON_CHEV_R + '</button>' +
-      '<div class="dcc-tour-lightbox-cap"></div>';
+      '<button class="dcc-tour-lightbox-nav next" aria-label="Next">' + ICON_CHEV_R + '</button>';
     el.querySelector('#dcc-v-share').addEventListener('click', () => {
       const it = viewerItems[viewerIdx]; if (!it) return;
       const src = it.full || it.url || '';
@@ -5210,6 +5275,12 @@
     if (url) ov.style.backgroundImage = 'url("' + String(url).replace(/["\\]/g, '') + '")';
     return ov;
   }
+  // the media starts just below the top bar, however many lines the bar takes on this screen
+  function viewerFitTop(el0) {
+    const bar = el0 && el0.querySelector('.dcc-tour-vtop');
+    if (bar) el0.style.setProperty('--vtop', Math.ceil(bar.getBoundingClientRect().height) + 'px');
+  }
+  window.addEventListener('resize', () => { const v = document.getElementById('dcc-tour-viewer'); if (v && v.classList.contains('open')) viewerFitTop(v); });
   function openViewer(idx) { if (viewerItems.length) { ensureViewerEl(); showViewer(idx); } }
   let vwPrevFocus = null;
   function showViewer(idx) {
@@ -5264,56 +5335,47 @@
         if (v && v.kind === 'photo' && v.full && v.full !== it.full) { const p = new Image(); p.decoding = 'async'; p.src = v.full; }
       });
     }
-    const cap = el0.querySelector('.dcc-tour-lightbox-cap');
-    cap.textContent = [it.place, it.date, it.time].filter(Boolean).join(' · ');
+    // the top bar: where and when, then this item's own buttons (Maps, History, Then, all shots here)
+    el0.querySelector('.vt-place').textContent = it.place || '';
+    // "8 / 18 · Sep 20 · 10:15 · 42.65990° N, 18.01700° E" (the counter is hidden for a single item)
+    const when = [it.date, it.time, it.lat != null && it.lng != null ? fmtCoord(it.lat, it.lng) : ''].filter(Boolean).join(' · ');
+    el0.querySelector('.vt-when').textContent = (n > 1 && when ? ' · ' : '') + when;
+    const ctx = el0.querySelector('.vt-ctx'); ctx.innerHTML = '';
+    const vtBtn = (cls, icon, label, aria) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'vt-b ' + cls;
+      b.innerHTML = '<i>' + icon + '</i><span></span>'; b.lastChild.textContent = label; b.setAttribute('aria-label', aria); b.title = aria; ctx.appendChild(b); return b; };
     // the photo's exact spot, one tap from a maps app
     if (it.lat != null && it.lng != null) {
-      const pr = document.createElement('button');
-      pr.type = 'button'; pr.className = 'dcc-tour-lb-pin dcc-pinbtn';
+      const pr = vtBtn('vt-gold dcc-tour-lb-pin dcc-pinbtn', dIcon('pin'), 'Maps', 'Open this spot in a maps app: ' + fmtCoord(it.lat, it.lng));
       pr.dataset.lat = it.lat; pr.dataset.lng = it.lng; pr.dataset.place = it.place || '';
-      pr.setAttribute('aria-label', 'Open this spot in a maps app: ' + fmtCoord(it.lat, it.lng));
-      pr.innerHTML = '<span class="lbp-ic">' + dIcon('pin') + '</span><span class="lbp-t"><b>' + escapeHtml(fmtCoord(it.lat, it.lng)) + '</b><span>Open in Maps</span></span>';
-      cap.appendChild(pr);
     }
     // one link to the History tab for the spot this was taken
     if (it.place && histPlaceOk(it.place)) {
-      const a = document.createElement('button');
-      a.className = 'dcc-tour-lb-place dcc-tour-lb-hist'; a.type = 'button';
-      a.innerHTML = svgIcon('history') + '<span>History of this place ›</span>';
-      a.addEventListener('click', e => {
-        e.stopPropagation(); const n = it.place;
+      vtBtn('dcc-tour-lb-hist', svgIcon('history'), 'History', 'History of this place').addEventListener('click', e => {
+        e.stopPropagation(); const pl = it.place;
         closeViewer(true);   // history.back() here would race the navigation below
         try { history.replaceState({ dccView: root.dataset.view || 'story' }, '', location.href); } catch (err) { /* sandboxed */ }
-        openPlaceHistory(n);
+        openPlaceHistory(pl);
       });
-      const row = document.createElement('div'); row.className = 'dcc-tour-lb-row';
-      row.appendChild(a);
       if (it.kind !== 'video' && it.kind !== 'clip') {
-        const t = document.createElement('button');
-        t.className = 'dcc-tour-lb-place dcc-tour-lb-then'; t.type = 'button';
+        const t = vtBtn('dcc-tour-lb-then', ICON_THEN, 'Then', 'Then: drag across the photo to see this spot in another era');
         t.setAttribute('aria-pressed', vThenOn ? 'true' : 'false');
-        t.title = 'Drag across the photo to see this spot in another era';
-        t.innerHTML = '<span>Then</span>';
         t.addEventListener('click', e => { e.stopPropagation(); vThenOn = !vThenOn; viewerThen(it); });
-        row.appendChild(t);
       }
-      cap.appendChild(row);
     }
     viewerThen(it);
-    // map-opened items get a link to that place's full popup (all shots + Open day)
+    // map-opened items: all the shots at that place (its popup on the Map, with Open day)
     if (it.mapRef) {
-      const a = document.createElement('button');
-      a.className = 'dcc-tour-lb-place'; a.type = 'button';
-      a.textContent = '▦ See all ' + it.mapRef.count + (it.mapRef.count === 1 ? ' shot' : ' shots') + ' here';
-      a.addEventListener('click', (e) => { e.stopPropagation(); const r = it.mapRef; closeViewer(); openMapSidebar(r.di, r.pi); });
-      cap.appendChild(a);
+      const c = it.mapRef.count;
+      vtBtn('dcc-tour-lb-all', ICON_GRID, c + ' here', 'See all ' + c + (c === 1 ? ' shot' : ' shots') + ' here').addEventListener('click', e => {
+        e.stopPropagation(); const r = it.mapRef; closeViewer(); openMapSidebar(r.di, r.pi); });
     }
     el0.querySelector('.dcc-tour-lightbox-count').textContent = (viewerIdx + 1) + ' / ' + n;
     // nothing to step through with a single item: hide the arrows and the "1 / 1" counter
     el0.querySelectorAll('.dcc-tour-lightbox-nav, .dcc-tour-lightbox-count').forEach(x => { x.style.display = n === 1 ? 'none' : ''; });
     el0.classList.add('open');
+    viewerFitTop(el0);
     if (!wasOpen) {
-      vwPrevFocus = document.activeElement; el0.querySelector('.dcc-tour-lightbox-close').focus();
+      vwPrevFocus = document.activeElement; focusInto(el0, el0.querySelector('.dcc-tour-lightbox-close'));
       // an open photo is a step in the browser history, so the phone's Back button closes it
       try { history.pushState(Object.assign({}, history.state, { dccViewer: true }), '', location.href); } catch (e) { /* sandboxed */ }
     }
