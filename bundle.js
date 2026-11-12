@@ -22,6 +22,16 @@
   //      elevation and temperature everywhere, live ----
   // drawn icons for arrows and buttons (typed characters like ‹ › ▴ × ⛶ sit off-centre and vary by font)
   const DRAWN = { l: 'M15.5 5 8.5 12l7 7', r: 'm8.5 5 7 7-7 7', u: 'M5 15.5 12 8.5l7 7', d: 'M5 8.5 12 15.5l7-7', x: 'M6 6l12 12M18 6 6 18', fs: 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5' };
+  // a sideways-scrolling row gets a soft fade and an arrow at whichever end has more (computers and tablets)
+  function scrollEdges(nav) {
+    const edge = (side, dir) => { const e = el('span', 'dn-edge dn-' + side, '<span class="dn-btn" aria-hidden="true">' + drawn(side, 18) + '</span>');
+      e.firstChild.addEventListener('click', ev => { ev.stopPropagation(); nav.scrollBy({ left: dir * nav.clientWidth * 0.8, behavior: scrollBehavior() }); }); return e; };
+    nav.prepend(edge('l', -1)); nav.appendChild(edge('r', 1)); nav.classList.add('dn-host');
+    const upd = () => { const max = nav.scrollWidth - nav.clientWidth; nav.classList.toggle('dn-more-l', nav.scrollLeft > 4); nav.classList.toggle('dn-more-r', nav.scrollLeft < max - 4); };
+    nav.addEventListener('scroll', upd, { passive: true }); window.addEventListener('resize', upd);
+    if ('ResizeObserver' in window) new ResizeObserver(upd).observe(nav);
+    upd(); return upd;
+  }
   const drawn = (k, size) => '<svg class="dcc-dr" viewBox="0 0 24 24" width="' + (size || 18) + '" height="' + (size || 18) + '" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + DRAWN[k] + '"/></svg>';
   let unitSys = 'imperial';                 // 'imperial' | 'metric'
   const imp = () => unitSys === 'imperial';
@@ -228,19 +238,16 @@
       nav.appendChild(b);
     });
     // computers: a soft fade and an arrow at whichever end of the day strip has more days
-    const edge = (side, dir) => { const e = el('span', 'dn-edge dn-' + side, '<button type="button" tabindex="-1" aria-hidden="true">' + drawn(side, 18) + '</button>');
-      e.firstChild.addEventListener('click', () => nav.scrollBy({ left: dir * nav.clientWidth * 0.8, behavior: scrollBehavior() })); return e; };
-    nav.prepend(edge('l', -1)); nav.appendChild(edge('r', 1));
-    const navEdges = () => { const max = nav.scrollWidth - nav.clientWidth; nav.classList.toggle('dn-more-l', nav.scrollLeft > 4); nav.classList.toggle('dn-more-r', nav.scrollLeft < max - 4); };
-    nav.addEventListener('scroll', navEdges, { passive: true }); window.addEventListener('resize', navEdges);
+    const navEdges = scrollEdges(nav);
     // the sticky tab bar and day strip report their heights, so whatever sticks below them starts below them
     if ('ResizeObserver' in window) setTimeout(() => {
       const modes = root.querySelector('.dcc-tour-modes');
       const ro = new ResizeObserver(() => {
         root.style.setProperty('--dcc-modes-h', (modes ? modes.offsetHeight : 0) + 'px');
-        root.style.setProperty('--dcc-daynav-h', nav.offsetHeight + 'px'); navEdges();
+        // on short screens (a phone turned sideways) the day strip scrolls away, so it takes no room at the top
+        root.style.setProperty('--dcc-daynav-h', (getComputedStyle(nav).position === 'sticky' ? nav.offsetHeight : 0) + 'px'); navEdges();
       });
-      if (modes) ro.observe(modes); ro.observe(nav);
+      if (modes) ro.observe(modes); ro.observe(nav); ro.observe(document.documentElement);
     }, 0);
     const body = el('div', 'dcc-tour-body');
     const story = el('section', 'dcc-tour-story');
@@ -569,6 +576,7 @@
           histSegOn(at('.dcc-chron') ? 'chron' : at('.dcc-hist-trip') ? 'trip' : 'map');
         });
       }, { passive: true });
+      scrollEdges(histEl.querySelector('.dcc-hist-jump'));
       histEl.querySelector('.dcc-hist-jump').addEventListener('click', e => {
         const b = e.target.closest('[data-jump]');
         if (!b) return;
@@ -4442,8 +4450,8 @@
       '</div>' +
       '<div class="tk-perf" aria-hidden="true"></div>' +
       '<div class="tk-foot"><div class="tk-best">' +
-        (busiest && busiest.count > 0 ? '<span>' + dIcon('belltower') + ' Busiest day <b>' + escapeHtml(bLab) + '</b> · ' + busiest.count + '</span>' : '') +
-        (captured ? '<span>' + dIcon('pin') + ' Most captured <b>' + escapeHtml(shortName(captured.name)) + '</b> · ' + captured.count + '</span>' : '') +
+        (busiest && busiest.count > 0 ? '<span>' + dIcon('belltower') + ' Busiest day <span class="tk-keep"><b>' + escapeHtml(bLab) + '</b>\u00a0· ' + busiest.count + '</span></span>' : '') +
+        (captured ? '<span>' + dIcon('pin') + ' Most captured <span class="tk-keep"><b>' + escapeHtml(shortName(captured.name)) + '</b>\u00a0· ' + captured.count + '</span></span>' : '') +
       '</div><img class="tk-crest" src="' + escapeAttr(resolveUrl('icons/crest-96.png')) + '" alt=""></div>' +
     '</div>';
     return ticket + '<div class="dcc-tour-tripstats">' +
