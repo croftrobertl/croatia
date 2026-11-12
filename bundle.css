@@ -2183,3 +2183,5 @@ html.dcc-matrix-on .dn-edge button { background: #021004; color: #46e05a; border
 .dcc-hp-x, .dcc-pc-x, .mm-fan-x, .dcc-tour-mm-close { line-height: 0; }
 .dcc-tour-history .bh-transport .dcc-tm-step { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 .dcc-tour-history .bh-transport .dcc-tm-step svg.dcc-dr { margin: 0; }
+/* the "You stood here" mini map keeps its layers to itself (they drew over the phone's tab bar while scrolling) */
+.dcc-hp-you-map { position: relative; z-index: 0; isolation: isolate; }
