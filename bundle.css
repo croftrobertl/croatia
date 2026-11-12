@@ -62,7 +62,7 @@
   --dcc-tour-surface: #eae9e9;          /* plate mats */
   --dcc-tour-card-bg: #f8f4f4;          /* quiet raised surfaces (neutral-100) */
   --dcc-tour-text: #201f1d;
-  --dcc-tour-muted: #736f6a;
+  --dcc-tour-muted: #696560;
   --dcc-tour-border: #d7d3d3;           /* hairline (neutral-300) */
   --dcc-tour-shadow: 0 3px 12px color-mix(in srgb, #2d2b2b 13%, transparent); /* a whisper */
   --dcc-tour-radius: 6px;   /* one editorial radius shared by every panel/tile/field */
@@ -1206,7 +1206,7 @@ html.dcc-matrix-on .dcc-vt li.war .dcc-vt-t { color: inherit; }
 }
 /* muted text (the map's era names, ticks and notes, the chronicle's captions) sits at 4.46:1 on this
    ground in the default theme; one step darker clears 4.5:1 (Matrix mode already passes, so it's left alone) */
-html:not(.dcc-matrix-on) .dcc-tour-history { --dcc-tour-muted: #6d6964; }
+html:not(.dcc-matrix-on) .dcc-tour-history { --dcc-tour-muted: #696560; }
 @media (max-width: 800px) {
   .dcc-tour-history { padding: 0.5rem 0.8rem 2rem; }
 }
@@ -1991,7 +1991,8 @@ html.dcc-matrix-on .dcc-hp-siege .dcc-hist-note-k { color: #ff6b5e; }
 @media (max-width: 800px) {
   .dcc-tour-root[data-view="history"] .dcc-tour-history { padding-top: env(safe-area-inset-top, 0px); }
   .dcc-hist-seg { display: flex; position: sticky; top: calc(8px + env(safe-area-inset-top, 0px)); z-index: 30; margin: 10px 0 12px; padding: 3px; gap: 2px;
-    background: var(--dcc-tour-card-bg); border: 1px solid var(--dcc-tour-border); border-radius: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+    background: var(--dcc-tour-card-bg); border: 1px solid var(--dcc-tour-border); border-radius: 12px; box-shadow: 0 -14px 0 #f3f2f2, 0 4px 14px rgba(0,0,0,0.08); }
+  html.dcc-matrix-on .dcc-hist-seg { box-shadow: 0 -14px 0 #000, 0 4px 14px rgba(0,0,0,0.3); }
   .dcc-tour-root.dcc-tour-root .dcc-hist-seg button { flex: 1; min-height: 40px; padding: 0 6px; border: 0; border-radius: 9px; background: none; cursor: pointer;
     font-family: var(--dcc-tour-font); font-size: 0.86rem; font-weight: 600; color: var(--dcc-tour-muted); }
   .dcc-tour-root.dcc-tour-root .dcc-hist-seg button[aria-current] { background: var(--dcc-tour-text); color: var(--dcc-tour-bg); }
@@ -2177,3 +2178,8 @@ svg.dcc-dr { display: block; flex: none; margin: auto; }
 }
 @media (max-width: 800px) { .dn-edge { display: none; } }
 html.dcc-matrix-on .dn-edge button { background: #021004; color: #46e05a; border-color: rgba(0, 255, 70, 0.4); }
+
+/* drawn close icons in the remaining × buttons; the History era steps keep their labels beside the arrow */
+.dcc-hp-x, .dcc-pc-x, .mm-fan-x, .dcc-tour-mm-close { line-height: 0; }
+.dcc-tour-history .bh-transport .dcc-tm-step { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.dcc-tour-history .bh-transport .dcc-tm-step svg.dcc-dr { margin: 0; }

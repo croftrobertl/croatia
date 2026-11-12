@@ -661,14 +661,15 @@
       const b = bh.querySelector('.bh-transport [data-a="' + sel + '"]');
       if (!b) return;
       const fr = F[k];
-      b.textContent = fr ? (sel === 'prev' ? arrow + ' ' + fr.label : fr.label + ' ' + arrow) : arrow;
+      const ic = drawn(arrow, 16), lab = fr ? '<span>' + escapeHtml(fr.label) + '</span>' : '';
+      b.innerHTML = sel === 'prev' ? ic + lab : lab + ic;
       b.classList.add('dcc-tm-step');
       // aria-disabled, not disabled: a disabled button would drop keyboard focus at the ends
       b.setAttribute('aria-disabled', String(!fr));
       b.setAttribute('aria-label', fr ? word + ' era: ' + fr.label : word + ' era');
     };
-    step('prev', histIdx - 1, '‹', 'Previous');
-    step('next', histIdx + 1, '›', 'Next');
+    step('prev', histIdx - 1, 'l', 'Previous');
+    step('next', histIdx + 1, 'r', 'Next');
   }
   function wireSwipe(bh) {
     const vp = bh.querySelector('.bh-viewport'), stage = bh.querySelector('.bh-stage');
@@ -1481,7 +1482,7 @@
       '<div class="dcc-pc-acts">' + (ph.items.length > 1 ? '<button type="button" data-pc="prev" aria-label="Previous photo">‹</button>' +
         '<span class="dcc-pc-n">Photo ' + (k + 1) + ' of ' + ph.items.length + '</span><button type="button" data-pc="next" aria-label="Next photo">›</button>' : '') +
         '<button type="button" data-pc="share" class="dcc-pc-main">' + (navigator.share ? 'Share' : 'Save') + '</button>' +
-        '<button type="button" data-pc="close" class="dcc-pc-x" aria-label="Close">×</button></div></div>';
+        '<button type="button" data-pc="close" class="dcc-pc-x" aria-label="Close">' + drawn('x', 18) + '</button></div></div>';
     ov.classList.add('open');
     ov.querySelector('[data-pc="share"]').focus();
     pcBlob = null;
@@ -1948,7 +1949,7 @@
     }
     if (sec.dataset.pl === name) return;
     sec.dataset.pl = name;
-    const closeBtn = '<button type="button" class="dcc-hp-x" aria-label="Close this place" title="Close">×</button>';
+    const closeBtn = '<button type="button" class="dcc-hp-x" aria-label="Close this place" title="Close">' + drawn('x', 18) + '</button>';
     if (!g) { sec.innerHTML = closeBtn + '<p class="dcc-hist-msg">That place isn’t in the trip.</p>'; return; }
     if (sec._youMap) { sec._youMap.remove(); sec._youMap = null; }
     sec.innerHTML = '<p class="dcc-hist-msg">Finding ' + escapeHtml(shortName(name)) + ' on the old maps…</p>';
@@ -2219,7 +2220,7 @@
       '<div class="dcc-pc-acts">' + (ph.length > 1 ? '<button type="button" data-pc="prev" aria-label="Previous photo">‹</button>' +
         '<span class="dcc-pc-n">Photo ' + (k + 1) + ' of ' + ph.length + '</span><button type="button" data-pc="next" aria-label="Next photo">›</button>' : '') +
         '<button type="button" data-pc="share" class="dcc-pc-main">' + (navigator.share ? 'Share' : 'Save') + '</button>' +
-        '<button type="button" data-pc="close" class="dcc-pc-x" aria-label="Close">×</button></div></div>';
+        '<button type="button" data-pc="close" class="dcc-pc-x" aria-label="Close">' + drawn('x', 18) + '</button></div></div>';
     ov.classList.add('open');
     ov.querySelector('[data-pc="share"]').focus();
     pcBlob = null;
@@ -2631,7 +2632,7 @@
     }).join('');
     fan.innerHTML = '<div class="mm-fan-h"><div><b>' + escapeHtml((place ? place + ' · ' : '') + plur(recs.length, recs.some(r => r.it.kind && r.it.kind !== 'photo') ? 'shot' : 'photo') + ' here') + '</b>' +
       (anyHeading ? '<span>The cones show which way each one faced</span>' : '') + '</div>' +
-      '<button type="button" class="mm-fan-x" aria-label="Close">&times;</button></div><div class="mm-fan-strip">' + thumbs + '</div>';
+      '<button type="button" class="mm-fan-x" aria-label="Close">' + drawn('x', 18) + '</button></div><div class="mm-fan-strip">' + thumbs + '</div>';
     fan.hidden = false;
     fan.parentNode.classList.add('mm-fan-open');
     fan.querySelector('.mm-fan-x').addEventListener('click', mmCloseFan);
@@ -2681,7 +2682,7 @@
     });
     const days = []; group.forEach(r => { if (days.indexOf(r.d.short) < 0) days.push(r.d.short); });
     side.hidden = false;
-    side.innerHTML = '<button class="dcc-tour-mm-close" aria-label="Close">&times;</button>' +
+    side.innerHTML = '<button class="dcc-tour-mm-close" aria-label="Close">' + drawn('x', 18) + '</button>' +
       '<h3>' + group.length + ' shots here</h3>' +
       '<p class="dcc-tour-mm-meta">' + escapeHtml(days.length === 1 ? days[0] : days.length + ' days') + ' · tap any to view</p>' +
       '<div class="dcc-tour-media dcc-tour-mm-grid">' + thumbs.join('') + '</div>';
@@ -3768,7 +3769,7 @@
       }
     });
     side.hidden = false;
-    side.innerHTML = '<button class="dcc-tour-mm-close" aria-label="Close">&times;</button>' +
+    side.innerHTML = '<button class="dcc-tour-mm-close" aria-label="Close">' + drawn('x', 18) + '</button>' +
       '<h3>' + escapeHtml(p.name) + mapsLink(p.lat, p.lng, 'dcc-tour-maplink head') + '</h3>' + histPlaceLink(p.name) +
       '<p class="dcc-tour-mm-meta">' + [escapeHtml(d.label), escapeHtml(p.from === p.to ? p.from : p.from + '–' + p.to),
         items.length + (items.length === 1 ? ' shot' : ' shots') + (personOn() ? ' by ' + escapeHtml(personLabel()) : '')].filter(Boolean).join(' · ') + '</p>' +
@@ -4099,6 +4100,13 @@
         galIO = new IntersectionObserver(en => { if (en[0].isIntersecting) renderGalleryChunk(); });
         galIO.observe(g.querySelector('#dcc-galmore'));
       }
+      // and a plain scroll check as a backstop, in case the observer is slow to report on a busy phone
+      let galTick = false;
+      window.addEventListener('scroll', () => {
+        if (galTick || root.dataset.view !== 'gallery') return; galTick = true;
+        requestAnimationFrame(() => { galTick = false; const m = document.getElementById('dcc-galmore');
+          if (m && m.style.display !== 'none' && m.getBoundingClientRect().top < innerHeight * 2) renderGalleryChunk(); });
+      }, { passive: true });
     }
     renderGallery();
   }
@@ -4452,7 +4460,7 @@
           { html: dIcon('road') + ' ' + Math.round(tm.road / g * 100) + '% · ' + dIcon('walk') + ' ' + Math.round(tm.walk / g * 100) + '% · ' + dIcon('ship') + ' ' + Math.round(tm.boat / g * 100) + '%' }, 0,
           'Estimated total distance on the ground (flights excluded), split into bus/car vs walking vs boat. Inferred from place names, geography and the watch — only the walking share is sensor-measured.'); })() : '') +
       (photos != null ? statTile(photos + videos + clips, '', 'photos & videos',
-        photos + ' photos · ' + videos + ' videos · ' + clips + ' clips', 0,
+        fmt(photos) + ' photos · ' + fmt(videos) + ' videos · ' + fmt(clips) + ' clips', 0,
         'Every photo, video and GoPro clip placed in the archive. The two closing montage videos on the Conclusion day aren’t counted.') : '') +
       '</div>' + sup + note;
   }
@@ -4979,7 +4987,7 @@
         const st = interp(day.health.stepcurve, mn), cl = cumClimb(day.health.elev, mn);
         const bits = [];
         if (st != null) bits.push('≈' + fmt(st) + ' steps');
-        if (cl) bits.push('↑' + cl + ' m');
+        if (cl) bits.push('↑' + elevFromM(cl));
         if (bits.length) cum = ' <span class="dcc-tour-place-cum">' + bits.join(' · ') + ' by now</span>';
       }
       const spent = p.mins ? ' · ' + (p.mins >= 60 ? (p.mins/60).toFixed(1) + ' h' : p.mins + ' min') + ' here' : '';
@@ -5058,7 +5066,7 @@
       document.getElementById('hud-time').textContent = p.from;
       document.getElementById('hud-place').textContent = p.name;
       document.getElementById('hud-steps').textContent = st != null ? fmt(st) + ' steps' : '';
-      document.getElementById('hud-alt').textContent = '↑' + cumClimb(day.health && day.health.elev, minute) + ' m';
+      document.getElementById('hud-alt').textContent = '↑' + elevFromM(cumClimb(day.health && day.health.elev, minute));
       i++;
     };
     tick();

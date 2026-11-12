@@ -45,6 +45,9 @@
     };
   }
 
+  // drawn icons (typed ‹ › × sit off-centre and vary by font)
+  const bhIcon = (d, n) => '<svg class="bh-dr" viewBox="0 0 24 24" width="' + n + '" height="' + n + '" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + d + '"/></svg>';
+  const BH_ICON = { l: bhIcon('M15.5 5 8.5 12l7 7', 16), r: bhIcon('m8.5 5 7 7-7 7', 16), x: bhIcon('M6 6l12 12M18 6 6 18', 16) };
   const PLAY_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M7 5l12 7-12 7z" fill="currentColor"/></svg>';
   const PAUSE_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><rect x="6" y="5" width="4" height="14" fill="currentColor"/><rect x="14" y="5" width="4" height="14" fill="currentColor"/></svg>';
 
@@ -149,9 +152,9 @@
     track.appendChild(ticks);
     const transport = el('div', 'bh-transport');
     transport.innerHTML =
-      '<button type="button" class="bh-btn" data-a="prev" aria-label="Previous era">‹</button>' +
+      '<button type="button" class="bh-btn" data-a="prev" aria-label="Previous era">' + BH_ICON.l + '</button>' +
       '<button type="button" class="bh-btn bh-playbtn" data-a="play" aria-pressed="false" aria-label="Play through the eras" title="Play through the eras">' + PLAY_SVG + '</button>' +
-      '<button type="button" class="bh-btn" data-a="next" aria-label="Next era">›</button>';
+      '<button type="button" class="bh-btn" data-a="next" aria-label="Next era">' + BH_ICON.r + '</button>';
     const toggles = el('div', 'bh-toggles');
     toggles.innerHTML =
       '<label class="bh-toggle"><input type="checkbox" id="bh-t-caps" checked><span>Capitals</span></label>' +
@@ -403,7 +406,7 @@
           info.innerHTML = `<div class="bh-info-name"><i class="bh-swatch bh-pin-swatch"></i>${esc(pc.name)}</div>` +
             `<div class="bh-info-note">${esc(pc.note)}</div>` +
             (pc.acts && pc.acts.length ? '<div class="bh-info-acts">' + pc.acts.map(([k, l]) => `<button type="button" class="bh-info-act" data-pin-act="${esc(k)}">${esc(l)}</button>`).join('') + '</div>' : '') +
-            '<button type="button" class="bh-pick-x" aria-label="Close">×</button>';
+            '<button type="button" class="bh-pick-x" aria-label="Close">' + BH_ICON.x + '</button>';
           return;
         }
       }
@@ -417,7 +420,7 @@
           life.innerHTML = runs.map(([a, b]) => `<i style="left:${a / N * 100}%;width:${(b + 1 - a) / N * 100}%;background:${rc.c}"></i>`).join('');
           info.innerHTML = `<div class="bh-info-name"><i class="bh-swatch" style="background:${rc.c}"></i>${esc(rc.n)}</div>` +
             `<div class="bh-info-note">${rc.notes.map(esc).join(' ')}</div>` +
-            '<button type="button" class="bh-pick-x" aria-label="Close">×</button>';
+            '<button type="button" class="bh-pick-x" aria-label="Close">' + BH_ICON.x + '</button>';
           return;
         }
       }
@@ -437,7 +440,7 @@
       notes.push(idx.length === 1 ? `Only on the ${first} map.` : `On ${idx.length} of ${N} maps, ${first} – ${last}.`);
       info.innerHTML = `<div class="bh-info-name"><i class="bh-swatch" style="background:${ft.c}"></i>${esc(ft.n)}</div>` +
         `<div class="bh-info-note">${notes.map(esc).join(' ')}</div>` +
-        '<button type="button" class="bh-pick-x" aria-label="Close">×</button>';
+        '<button type="button" class="bh-pick-x" aria-label="Close">' + BH_ICON.x + '</button>';
     }
 
     // Two speeds. While a finger drags the ribbon only the map, the year and the ribbon change
