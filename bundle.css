@@ -393,7 +393,8 @@ body.dcc-tour-resizing { cursor: col-resize; user-select: none; }
   background: var(--dcc-tour-primary); border-color: var(--dcc-tour-primary); color: #fff;
 }
 .dcc-tour-lightbox-close { top: 12px; right: 12px; width: 44px; height: 44px; }
-.dcc-tour-lightbox-nav { position: absolute; width: 48px; height: 48px; font-size: 2rem; line-height: 1; }
+.dcc-tour-lightbox-nav { position: absolute; width: 48px; height: 48px; padding: 0; font-size: 0; line-height: 0; }
+.dcc-tour-lightbox-nav svg { display: block; flex: none; }
 .dcc-tour-lightbox-nav.prev { left: 1rem; top: 50%; transform: translateY(-50%); }
 .dcc-tour-lightbox-nav.next { right: 1rem; top: 50%; transform: translateY(-50%); }
 .dcc-tour-lightbox-nav.prev:hover, .dcc-tour-lightbox-nav.next:hover { transform: translateY(-50%); }

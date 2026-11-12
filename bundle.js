@@ -5161,6 +5161,10 @@
   //      footage is actually visible; native controls have room and auto-hide during
   //      playback (tap the video to bring them back), instead of the cramped inline
   //      player where the control chrome blacked out the tiny frame. ----
+  // drawn chevrons, so they sit in the exact middle of their round buttons (the ‹ › characters sat
+  // high and to one side, by however the font placed them)
+  const ICON_CHEV_L = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.5 5 8.5 12l7 7"/></svg>';
+  const ICON_CHEV_R = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8.5 5 7 7-7 7"/></svg>';
   function ensureViewerEl() {
     let el = document.getElementById('dcc-tour-viewer');
     if (el) return el;
@@ -5174,9 +5178,9 @@
       '<div class="dcc-tour-lightbox-actions">' +
         '<a class="lb-act" id="dcc-v-dl" download aria-label="Download" title="Download">' + ICON_DL + '</a>' +
         '<button class="lb-act" id="dcc-v-share" aria-label="Share" title="Share">' + ICON_SHARE + '</button></div>' +
-      '<button class="dcc-tour-lightbox-nav prev" aria-label="Previous">&#8249;</button>' +
+      '<button class="dcc-tour-lightbox-nav prev" aria-label="Previous">' + ICON_CHEV_L + '</button>' +
       '<div class="dcc-tour-vstage"></div>' +
-      '<button class="dcc-tour-lightbox-nav next" aria-label="Next">&#8250;</button>' +
+      '<button class="dcc-tour-lightbox-nav next" aria-label="Next">' + ICON_CHEV_R + '</button>' +
       '<div class="dcc-tour-lightbox-cap"></div>';
     el.querySelector('#dcc-v-share').addEventListener('click', () => {
       const it = viewerItems[viewerIdx]; if (!it) return;
