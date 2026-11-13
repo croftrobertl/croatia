@@ -140,7 +140,7 @@
   function _ymd(d) { const a = (d.date || '').split('-').map(Number); return { y: a[0], m: a[1], dd: a[2] }; }
   function dDate(d) { const { m, dd } = _ymd(d); return (_MON[m - 1] || '') + ' ' + dd; }          // "Sep 10"
   function dWeekday(d) { const { y, m, dd } = _ymd(d); return _DOW[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()] || ''; }
-  function dShort(d) { const { m, dd } = _ymd(d); return String(m).padStart(2, '0') + '/' + String(dd).padStart(2, '0'); }   // "09/10", where space is tight
+  function dShort(d) { return dDate(d); }   // "Sep 10": the same everywhere (this used to be "09/10" where space was tight)
 
   // ---- horizontal-scroll affordance (task 9): an ALWAYS-VISIBLE custom
   //      scrollbar (a real track + draggable thumb rendered under each strip),
@@ -379,11 +379,11 @@
   function buildAppShell() {
     const tb = el('div', 'dcc-tour-topbar');
     tb.innerHTML =
-      '<button class="tb-arrow tb-prev" aria-label="Previous day">‹</button>' +
+      '<button class="tb-arrow tb-prev" aria-label="Previous day">' + drawn('l') + '</button>' +
       '<button class="tb-day" id="dcc-tb-day" aria-haspopup="dialog">' +
         '<span class="tb-daynum" id="dcc-tb-num"></span>' +
         '<span class="tb-daylabel" id="dcc-tb-lab"></span></button>' +
-      '<button class="tb-arrow tb-next" aria-label="Next day">›</button>' +
+      '<button class="tb-arrow tb-next" aria-label="Next day">' + drawn('r') + '</button>' +
       '<div class="tb-tools">' + unitToggleHTML('unit-mob') + musicToggleHTML('unit-mob') + '</div>';
     tb.querySelector('.tb-prev').addEventListener('click', () => { if (curDay > 0) selectDay(curDay - 1); });
     tb.querySelector('.tb-next').addEventListener('click', () => { if (curDay < DATA.day_count - 1) selectDay(curDay + 1); });
@@ -598,6 +598,7 @@
       return;
     }
     if (histWant) histSlug = histWant;   // keep the era in the URL while the map loads
+    renderHistPlace();                   // a place's card takes its space straight away
     if (histLoading) return;
     histLoading = true;
     const mountNow = () => {
@@ -1036,7 +1037,7 @@
     let b = histEl.querySelector('.dcc-chron-back');
     if (!b) {
       if (!on) return;
-      b = el('button', 'dcc-chron-back', '↓ Back to the chronicle');
+      b = el('button', 'dcc-chron-back', drawn('d', 15) + '<span>Back to the chronicle</span>');
       b.type = 'button';
       b.addEventListener('click', () => {
         storyLock(1600);
@@ -1487,8 +1488,8 @@
     ov.dataset.id = id; ov.dataset.k = k;
     ov._nav = d => openPostcard(id, k + d); ov._share = () => sharePostcard(id);
     ov.innerHTML = '<div class="dcc-pc-box"><div class="dcc-pc-img"><p>Making your postcard…</p></div>' +
-      '<div class="dcc-pc-acts">' + (ph.items.length > 1 ? '<button type="button" data-pc="prev" aria-label="Previous photo">‹</button>' +
-        '<span class="dcc-pc-n">Photo ' + (k + 1) + ' of ' + ph.items.length + '</span><button type="button" data-pc="next" aria-label="Next photo">›</button>' : '') +
+      '<div class="dcc-pc-acts">' + (ph.items.length > 1 ? '<button type="button" data-pc="prev" aria-label="Previous photo">' + drawn('l', 16) + '</button>' +
+        '<span class="dcc-pc-n">Photo ' + (k + 1) + ' of ' + ph.items.length + '</span><button type="button" data-pc="next" aria-label="Next photo">' + drawn('r', 16) + '</button>' : '') +
         '<button type="button" data-pc="share" class="dcc-pc-main">' + (navigator.share ? 'Share' : 'Save') + '</button>' +
         '<button type="button" data-pc="close" class="dcc-pc-x" aria-label="Close">' + drawn('x', 18) + '</button></div></div>';
     ov.classList.add('open');
@@ -1946,14 +1947,18 @@
   function renderHistPlace() {
     if (!histEl) return;
     let sec = histEl.querySelector('.dcc-hist-place');
-    if (!histPlace || !histHandle || !DATA) { if (sec) { if (sec._youMap) sec._youMap.remove(); sec.remove(); } return; }
-    if (!histHandle.frames || !histHandle.frames.length) return;   // the map's eras are still loading (onChange calls back)
+    if (!histPlace || !DATA) { if (sec) { if (sec._youMap) sec._youMap.remove(); sec.remove(); } return; }
     const name = histPlace, g = placeGeo(name);
     if (!sec) {
       sec = el('section', 'dcc-hist-place');
       sec.setAttribute('aria-label', 'This place in history');
       sec.addEventListener('click', histPlaceClick);
       histEl.querySelector('.dcc-hist-top').after(sec);
+    }
+    // the map's eras are still loading (onChange calls back): the card holds its space, so the page doesn't jump
+    if (!histHandle || !histHandle.frames || !histHandle.frames.length) {
+      if (!sec.firstChild) sec.innerHTML = '<p class="dcc-hist-msg">Finding ' + escapeHtml(shortName(name)) + ' on the old maps…</p>';
+      return;
     }
     if (sec.dataset.pl === name) return;
     sec.dataset.pl = name;
@@ -2225,8 +2230,8 @@
     ov.dataset.id = id; ov.dataset.k = k;
     ov._nav = d => placePostcard(name, k + d); ov._share = () => sharePostcard(id);
     ov.innerHTML = '<div class="dcc-pc-box"><div class="dcc-pc-img"><p>Making your postcard…</p></div>' +
-      '<div class="dcc-pc-acts">' + (ph.length > 1 ? '<button type="button" data-pc="prev" aria-label="Previous photo">‹</button>' +
-        '<span class="dcc-pc-n">Photo ' + (k + 1) + ' of ' + ph.length + '</span><button type="button" data-pc="next" aria-label="Next photo">›</button>' : '') +
+      '<div class="dcc-pc-acts">' + (ph.length > 1 ? '<button type="button" data-pc="prev" aria-label="Previous photo">' + drawn('l', 16) + '</button>' +
+        '<span class="dcc-pc-n">Photo ' + (k + 1) + ' of ' + ph.length + '</span><button type="button" data-pc="next" aria-label="Next photo">' + drawn('r', 16) + '</button>' : '') +
         '<button type="button" data-pc="share" class="dcc-pc-main">' + (navigator.share ? 'Share' : 'Save') + '</button>' +
         '<button type="button" data-pc="close" class="dcc-pc-x" aria-label="Close">' + drawn('x', 18) + '</button></div></div>';
     ov.classList.add('open');
@@ -2333,7 +2338,7 @@
     const d = DATA.days[curDay];
     // weekday as the small eyebrow, the date once below — no duplicated day number, no (misleading) single area
     root._topbar.querySelector('#dcc-tb-num').textContent = dWeekday(d);
-    root._topbar.querySelector('#dcc-tb-lab').textContent = dDate(d) + '  ▾';
+    root._topbar.querySelector('#dcc-tb-lab').innerHTML = escapeHtml(dDate(d)) + ' ' + drawn('d', 13);
     root._topbar.querySelector('.tb-prev').disabled = curDay <= 0;
     root._topbar.querySelector('.tb-next').disabled = curDay >= DATA.day_count - 1;
   }
@@ -2522,7 +2527,7 @@
           '<button class="mm-cb" data-mode="alt" aria-pressed="false">Altitude</button>' +
         '</span>' +
         '<div class="dcc-tour-facet dcc-tour-mm-layers" data-facet="layers">' +
-          '<button type="button" class="facet-btn" aria-expanded="false">Layers<span class="facet-caret" aria-hidden="true">▾</span></button>' +
+          '<button type="button" class="facet-btn" aria-expanded="false">Layers<span class="facet-caret" aria-hidden="true">' + drawn('d', 12) + '</span></button>' +
           '<div class="facet-panel" hidden><div class="facet-list">' +
             layerOpt('mm-path', 'Path', true) +
             layerOpt('mm-facing', 'Facing', true) +
@@ -3966,7 +3971,7 @@
     return '<div class="dcc-tour-facet" data-facet="' + kind + '">' +
       '<button type="button" class="facet-btn" aria-expanded="false">' + label +
         '<span class="facet-n"' + (opt.badgeId ? ' id="' + opt.badgeId + '"' : '') + ' hidden></span>' +
-        '<span class="facet-caret" aria-hidden="true">▾</span></button>' +
+        '<span class="facet-caret" aria-hidden="true">' + drawn('d', 12) + '</span></button>' +
       '<div class="facet-panel" hidden>' +
         (opt.search === false ? '' : '<input type="search" class="facet-search" placeholder="search ' + label.toLowerCase() + '…" autocomplete="off">') +
         '<div class="facet-list">' + opts.map(o =>
@@ -4129,7 +4134,7 @@
     galCur.sort(galSortCmp);
     // the viewer spans the whole filtered+sorted set — all photos, videos AND clips
     viewerItems = galCur.map((x, i) => { x._vi = i; return viewerMeta(x.it); });
-    document.getElementById('dcc-galcount').textContent = galCur.length.toLocaleString() + ' items';
+    document.getElementById('dcc-galcount').textContent = galCur.length.toLocaleString() + (galCur.length === 1 ? ' shot' : ' shots');
     document.getElementById('dcc-galcount2').textContent = galCur.length.toLocaleString();
     galDayN = {}; galCur.forEach(x => { galDayN[x.di] = (galDayN[x.di] || 0) + 1; });
     galEl.classList.toggle('gal-bytime', galSort.key === 'time');
@@ -4175,7 +4180,7 @@
     grid.innerHTML = groups.map((gp, gi) =>
       '<section class="galacc" data-open="0" data-gi="' + gi + '">' +
         '<button type="button" class="galacc-head" aria-expanded="false">' +
-          '<span class="galacc-chev" aria-hidden="true">▸</span>' +
+          '<span class="galacc-chev" aria-hidden="true">' + drawn('r', 13) + '</span>' +
           '<span class="galacc-lab">' + escapeHtml(gp.label) + '</span>' +
           '<span class="galacc-n">' + gp.items.length + '</span></button>' +
         '<div class="galacc-body dcc-tour-media" hidden></div>' +
@@ -4428,7 +4433,7 @@
       sup = '<div class="dcc-tour-superlatives">' +
         '<span class="sup-tip" tabindex="0" data-tip="' + escapeAttr('The single day with the most photos, videos and clips taken.') + '">' + dIcon('belltower') + ' Busiest day <b>' + escapeHtml((busiest.index && DATA.days[busiest.index - 1]) ? dWeekday(DATA.days[busiest.index - 1]).slice(0, 3) + ' ' + dDate(DATA.days[busiest.index - 1]) : busiest.label) + '</b> · ' + busiest.count + ' shots<span class="t-info" aria-hidden="true">ⓘ</span></span>' +
         (captured ? '<span class="sup-tip" tabindex="0" data-tip="' + escapeAttr('The place with the most photos and videos across the whole trip.') + '">' + dIcon('pin') + ' Most captured <b>' + escapeHtml(shortName(captured.name)) + '</b> · ' + captured.count + '<span class="t-info" aria-hidden="true">ⓘ</span></span>' : '') +
-        (!personOn() && s.longest_walk_day ? '<span class="sup-tip" tabindex="0" data-tip="' + escapeAttr('The day we covered the most ground between photo spots: straight-line distances between consecutive geotagged shots, counting only hops under 3 km (so drives, boats and flights are skipped). A rough “how far we roamed” estimate from photo GPS — not on-foot miles. For actual walking, see the “walked” tile.') + '">' + dIcon('walk') + ' Longest day <b>' + escapeHtml(s.longest_walk_day.label) + '</b> · ' + distFromKm(s.longest_walk_day.km) + ' between photo spots<span class="t-info" aria-hidden="true">ⓘ</span></span>' : '') +
+        (!personOn() && s.longest_walk_day ? '<span class="sup-tip" tabindex="0" data-tip="' + escapeAttr('The day we covered the most ground between photo spots: straight-line distances between consecutive geotagged shots, counting only hops under 3 km (so drives, boats and flights are skipped). A rough “how far we roamed” estimate from photo GPS — not on-foot miles. For actual walking, see the “walked” tile.') + '">' + dIcon('walk') + ' Longest day <b>' + escapeHtml((s.longest_walk_day.index && DATA.days[s.longest_walk_day.index - 1]) ? dWeekday(DATA.days[s.longest_walk_day.index - 1]).slice(0, 3) + ' ' + dDate(DATA.days[s.longest_walk_day.index - 1]) : s.longest_walk_day.label) + '</b> · ' + distFromKm(s.longest_walk_day.km) + ' between photo spots<span class="t-info" aria-hidden="true">ⓘ</span></span>' : '') +
         '</div>';
     }
     const note = personOn() ?
@@ -4949,7 +4954,7 @@
       '<div class="dc-text">' +
         (day.area ? '<span class="dc-area">' + escapeHtml(day.area) + '</span>' : '') +
         '<button type="button" class="dc-date" aria-haspopup="dialog" aria-label="Pick a day: ' + escapeAttr(dWeekday(day) + ' ' + dDate(day)) + '">' +
-          '<span class="dc-wd">' + escapeHtml(dWeekday(day)) + '</span><span class="dc-dd">' + escapeHtml(dDate(day)) + ' <span class="dc-caret" aria-hidden="true">▾</span></span></button>' +
+          '<span class="dc-wd">' + escapeHtml(dWeekday(day)) + '</span><span class="dc-dd">' + escapeHtml(dDate(day)) + ' <span class="dc-caret" aria-hidden="true">' + drawn('d', 15) + '</span></span></button>' +
         '<div class="dc-chips">' + chips.map(c => '<span class="dc-chip">' + c + '</span>').join('') + '</div>' +
       '</div></div>';
     html += '<div class="dcc-tour-dayhead">' +
@@ -4962,7 +4967,7 @@
       (day.health && day.health.elev ? elevSparkHTML(day.health.elev) : '') +
       '<div class="dcc-tour-dayactions">' +
       (day.health && (day.health.stepcurve || day.health.elev) ?
-        '<button class="dcc-tour-chip dcc-tour-replay" id="dcc-replay">▶ Replay this day</button>' : '') +
+        '<button class="dcc-tour-chip dcc-tour-replay" id="dcc-replay">' + PLAY_GLYPH + '<span>Replay this day</span></button>' : '') +
       '</div></div>';
 
     // Places default collapsed on phones (a big single-column day then reads as
@@ -5020,8 +5025,8 @@
     });
 
     html += '<div class="dcc-tour-daynavbtns">' +
-      (curDay > 0 ? '<button class="dcc-tour-chip" id="dcc-prev">← ' + escapeHtml(DATA.days[curDay-1].short) + '</button>' : '<span></span>') +
-      (curDay < DATA.day_count-1 ? '<button class="dcc-tour-chip" id="dcc-next">' + escapeHtml(DATA.days[curDay+1].short) + ' →</button>' : '<span></span>') +
+      (curDay > 0 ? '<button class="dcc-tour-chip" id="dcc-prev">' + drawn('l', 15) + '<span>' + escapeHtml(DATA.days[curDay-1].short) + '</span></button>' : '<span></span>') +
+      (curDay < DATA.day_count-1 ? '<button class="dcc-tour-chip" id="dcc-next"><span>' + escapeHtml(DATA.days[curDay+1].short) + '</span>' + drawn('r', 15) + '</button>' : '<span></span>') +
       '</div>';
 
     story.innerHTML = html;
@@ -5057,7 +5062,7 @@
     if (!places.length || !map) return;
     const hud = document.createElement('div');
     hud.id = 'dcc-hud'; hud.className = 'dcc-tour-hud';
-    hud.innerHTML = '<div class="hud-row"><b id="hud-time"></b><button id="hud-stop" aria-label="Stop">✕</button></div>' +
+    hud.innerHTML = '<div class="hud-row"><b id="hud-time"></b><button id="hud-stop" aria-label="Stop">' + drawn('x', 12) + '</button></div>' +
       '<div id="hud-place"></div><div class="hud-stats"><span id="hud-steps"></span><span id="hud-alt"></span></div>';
     root._mapdiv.parentNode.appendChild(hud);
     hud.querySelector('#hud-stop').addEventListener('click', stopReplay);

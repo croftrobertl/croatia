@@ -657,7 +657,7 @@ body.dcc-tour-resizing { cursor: col-resize; user-select: none; }
   .dcc-tour-weather, .dcc-tour-health { font-size: 1rem; }
   .dcc-tour-stairtale { font-size: 0.98rem; }
   .dcc-tour-cell-time { font-size: 0.72rem; }
-  .dcc-tour-place-head h3 { font-size: 1.42rem; }
+  .dcc-tour-place-head h3 { font-size: 1.12rem; line-height: 1.25; }   /* long names with their Croatian form took up to nine lines at 1.42rem */
   .dcc-tour-place-meta { font-size: 0.92rem; }
   .dcc-tour-place-cum { font-size: 0.82rem; }
   .dcc-tour-chip { font-size: 0.98rem; }
@@ -2214,3 +2214,38 @@ html.dcc-matrix-on .dn-edge .dn-btn { background: #021004; color: #46e05a; borde
   background: color-mix(in srgb, var(--dcc-tour-primary) 55%, transparent); }
 /* the Stats ticket keeps a name and its count together on small phones */
 .dcc-tour-ticket .tk-keep { display: inline-block; max-width: 100%; }
+
+/* ===== Matrix mode: bars and the History switcher stay readable ===== */
+/* the page colour is transparent in Matrix (the rain shows through), so the stuck bars get a solid black of their own */
+@media (min-width: 801px) {
+  html.dcc-matrix-on .dcc-tour-modes, html.dcc-matrix-on .dcc-tour-daynav { background: #000; box-shadow: 0 1px 0 rgba(0, 255, 70, 0.3); }
+  html.dcc-matrix-on .dn-l::before { background: linear-gradient(90deg, #000 35%, transparent); }
+  html.dcc-matrix-on .dn-r::before { background: linear-gradient(270deg, #000 35%, transparent); }
+}
+/* the chosen tab of the History switcher: dark letters on green (they were see-through on a pale block) */
+html.dcc-matrix-on .dcc-tour-root.dcc-tour-root .dcc-hist-seg button[aria-current] { background: #46e05a; color: #021004; }
+/* a link into a History chapter lands with its chapter buttons just below the stuck bar, not under it */
+.dcc-chron-tabs { scroll-margin-top: calc(var(--dcc-modes-h, 56px) + 10px); }
+@media (max-width: 800px) { .dcc-chron-tabs { scroll-margin-top: calc(66px + env(safe-area-inset-top, 0px)); } }
+
+/* ===== polish pass four ===== */
+/* the whole window takes the page colour (no white beside the page on wide screens or under a short page) */
+html, body { background: #f3f2f2; }
+@media print { html, body { background: #fff; } }
+/* drawn icons that sit beside a word */
+#dcc-prev, #dcc-next, .dcc-tour-replay, .dcc-chron-back, .tb-daylabel { display: inline-flex; align-items: center; gap: 6px; }
+.facet-caret, .dc-caret, .galacc-chev { display: inline-flex; align-items: center; vertical-align: middle; line-height: 0; }
+#dcc-prev svg.dcc-dr, #dcc-next svg.dcc-dr, .dcc-chron-back svg.dcc-dr, .tb-daylabel svg.dcc-dr, .facet-caret svg.dcc-dr, .dc-caret svg.dcc-dr, .galacc-chev svg.dcc-dr { margin: 0; }
+.dcc-tour-replay svg { flex: none; }
+.dcc-tour-hud #hud-stop { display: grid; place-items: center; padding: 0; }
+.dcc-pc-acts [data-pc="prev"], .dcc-pc-acts [data-pc="next"] { display: inline-grid; place-items: center; }
+/* phone photo viewer: a long place name wraps (up to three lines) instead of being cut off */
+@media (max-width: 800px) {
+  .dcc-tour-vtop .vt-place { white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; }
+}
+/* computers: a place's card holds its space while the old maps load, so the page doesn't jump when it fills in */
+@media (min-width: 801px) {
+  .dcc-hist-place:has(> .dcc-hist-msg:only-child) { min-height: calc(100vh - 220px); }
+}
+/* larger text: the Stats running totals go two to a row rather than colliding (no change at normal text size) */
+.tl-readout { grid-template-columns: repeat(auto-fit, minmax(max(88px, 5.5rem), 1fr)); }
