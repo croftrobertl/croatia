@@ -140,7 +140,9 @@
   function _ymd(d) { const a = (d.date || '').split('-').map(Number); return { y: a[0], m: a[1], dd: a[2] }; }
   function dDate(d) { const { m, dd } = _ymd(d); return (_MON[m - 1] || '') + ' ' + dd; }          // "Sep 10"
   function dWeekday(d) { const { y, m, dd } = _ymd(d); return _DOW[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()] || ''; }
-  function dShort(d) { return dDate(d); }   // "Sep 10": the same everywhere (this used to be "09/10" where space was tight)
+  function dShort(d) { return dDate(d); }
+  // "Mon Sep 22"; a day with its own name in the trip data (the "Recap") keeps that name
+  function dDay(d) { return d && d.date && /^[A-Z][a-z]{2} \d{1,2}$/.test(d.short || '') ? dWeekday(d).slice(0, 3) + ' ' + dDate(d) : (d && d.short) || ''; }   // "Sep 10": the same everywhere (this used to be "09/10" where space was tight)
 
   // ---- horizontal-scroll affordance (task 9): an ALWAYS-VISIBLE custom
   //      scrollbar (a real track + draggable thumb rendered under each strip),
@@ -2513,7 +2515,7 @@
   function buildMapMode() {
     const w = el('section', 'dcc-tour-mapmode');
     const dayOpts = DATA.days.map((d, i) =>
-      '<option value="' + i + '">' + escapeHtml(d.short) + '</option>').join('');
+      '<option value="' + i + '">' + escapeHtml(dDay(d)) + '</option>').join('');
     // layer toggles collapse into one "Layers ▾" dropdown (facet styling, like Photos)
     const layerOpt = (id, label, checked, hid) =>
       '<label class="facet-opt"' + (hid ? ' id="' + hid + '" hidden' : '') + '><input type="checkbox" id="' + id + '"' + (checked ? ' checked' : '') + '>' +
@@ -2693,7 +2695,7 @@
       else if (it.type === 'drive' && it.id) thumbs.push('<span class="mm-play-wrap" data-vi="' + vi + '"><img loading="lazy" src="https://drive.google.com/thumbnail?id=' + escapeAttr(it.id) + '&sz=w400" onerror="this.closest(\'.mm-play-wrap\').remove()"><span class="mm-play-badge"><span class="dcc-pbtn">' + PLAY_GLYPH + '</span></span></span>');
       else if (it.poster) thumbs.push('<img loading="lazy" src="' + escapeAttr(resolveUrl(it.poster)) + '" style="opacity:.85">');
     });
-    const days = []; group.forEach(r => { if (days.indexOf(r.d.short) < 0) days.push(r.d.short); });
+    const days = []; group.forEach(r => { const k = dDay(r.d); if (days.indexOf(k) < 0) days.push(k); });
     side.hidden = false;
     side.innerHTML = '<button class="dcc-tour-mm-close" aria-label="Close">' + drawn('x', 18) + '</button>' +
       '<h3>' + group.length + ' shots here</h3>' +
@@ -3609,7 +3611,7 @@
     if (mmColorMode === 'day') {
       el.className = 'dcc-tour-mm-legend';
       el.innerHTML = showAll + DATA.days.map((d, i) =>
-        '<button class="dcc-tour-legseg" data-day="' + i + '" title="' + escapeAttr(d.short + (d.area ? ' · ' + shortName(d.area) : '')) + '">' +
+        '<button class="dcc-tour-legseg" data-day="' + i + '" title="' + escapeAttr(dDay(d) + (d.area ? ' · ' + shortName(d.area) : '')) + '">' +
         '<span class="seg-sw" style="background:' + dayColor(i) + '"></span><span class="seg-n">' + escapeHtml(dShort(d)) + '</span></button>').join('');
       el.querySelectorAll('.dcc-tour-legseg[data-day]').forEach(c => c.addEventListener('click', () => {
         const di = +c.dataset.day;
@@ -5025,8 +5027,8 @@
     });
 
     html += '<div class="dcc-tour-daynavbtns">' +
-      (curDay > 0 ? '<button class="dcc-tour-chip" id="dcc-prev">' + drawn('l', 15) + '<span>' + escapeHtml(DATA.days[curDay-1].short) + '</span></button>' : '<span></span>') +
-      (curDay < DATA.day_count-1 ? '<button class="dcc-tour-chip" id="dcc-next"><span>' + escapeHtml(DATA.days[curDay+1].short) + '</span>' + drawn('r', 15) + '</button>' : '<span></span>') +
+      (curDay > 0 ? '<button class="dcc-tour-chip" id="dcc-prev">' + drawn('l', 15) + '<span>' + escapeHtml(dDay(DATA.days[curDay-1])) + '</span></button>' : '<span></span>') +
+      (curDay < DATA.day_count-1 ? '<button class="dcc-tour-chip" id="dcc-next"><span>' + escapeHtml(dDay(DATA.days[curDay+1])) + '</span>' + drawn('r', 15) + '</button>' : '<span></span>') +
       '</div>';
 
     story.innerHTML = html;
