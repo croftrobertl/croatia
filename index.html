@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive, noimageindex">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#f3f2f2">
+<meta property="og:title" content="Crofts in Croatia">
+<meta property="og:description" content="This site has moved.">
+<title>Crofts in Croatia has moved</title>
+<style>
+:root{color-scheme:light}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;background:#f3f2f2;color:#201f1d;font:18px/1.55 Georgia,"Times New Roman",serif;padding:24px 16px}
+main{width:100%;max-width:420px;text-align:center}
+h1{font:600 clamp(1.7rem,7vw,2.2rem)/1.15 Georgia,serif;letter-spacing:.04em;color:#8a5f1c;margin:0 0 10px;text-wrap:balance}
+p{margin:0 0 22px;color:#4a4743;text-wrap:balance}
+a.go{display:block;font:600 1.05rem/1.2 Georgia,serif;padding:15px 18px;border-radius:6px;background:#7d5411;color:#fff;text-decoration:none;min-height:48px}
+a.go:hover{background:#684509}a:focus-visible{outline:3px solid #b68235;outline-offset:2px}
+small{display:block;margin-top:18px;color:#696560;font-size:.85rem;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<main>
+  <h1>Crofts in Croatia</h1>
+  <p>Our trip site has moved to a new, private address. Family can open it with the family password.</p>
+  <a class="go" id="go" href="https://crofts-in-croatia.pages.dev/">Open the new site</a>
+  <small>crofts-in-croatia.pages.dev</small>
+</main>
+<script>
+// keep the same day or photo an old link pointed at
+if (location.hash) document.getElementById('go').href += location.hash;
+// remove the old site's saved offline copy from this device
+try { if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }).catch(function () {}); } catch (e) {}
+try { if (window.caches) caches.keys().then(function (ks) { ks.forEach(function (k) { caches.delete(k); }); }).catch(function () {}); } catch (e) {}
+</script>
+</body>
+</html>
